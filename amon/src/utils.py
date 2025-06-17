@@ -1,3 +1,4 @@
+# utils.py
 from pathlib import Path
 import ast
 
@@ -8,7 +9,7 @@ DEFAULT_PORT = 8765
 AMON_HOME = Path(__file__).parents[1]
 
 # Path to param file for each instance (corresponding index)
-INSTANCES_PARAM_FILEPATHS = [ AMON_HOME / 'src' / 'param_file.txt' ]
+INSTANCES_PARAM_FILEPATHS = [ AMON_HOME / 'instances' / '1' / 'params.txt' ]
 
 # Reads the point file
 def getPoint(point_filepath):

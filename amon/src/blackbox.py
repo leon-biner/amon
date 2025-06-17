@@ -1,4 +1,5 @@
 import shapely
+from pathlib import Path
 
 from py_wake.wind_farm_models.engineering_models import All2AllIterative
 
@@ -8,13 +9,14 @@ from amon.src.windfarm_data import WindFarmData
 
 def runBB(args): # , blackbox, wind_farm_data):
     # Figure out if user provided instance number or his own param file
-    try:
-        instance = int(args.instance_or_param_file) # If user provided an instance, get its param_file
-        param_filepath = INSTANCES_PARAM_FILEPATHS[instance - 1]
-        print(f"Running with instance {instance}")
-    except (ValueError, TypeError):
-        param_filepath = getPath(args.instance_or_param_file)
-        print(f"Running with file {param_filepath}")
+    # try:
+        # instance = int(args.instance_or_param_file) # If user provided an instance, get its param_file
+        # param_filepath = INSTANCES_PARAM_FILEPATHS[instance - 1]
+        # print(f"Running with instance {instance}")
+    # except (ValueError, TypeError):
+        # param_filepath = getPath(args.instance_or_param_file)
+        # print(f"Running with file {param_filepath}")
+    param_filepath = Path(args.instance_or_param_file)
 
     # Construct the blackbox
     wind_farm_data = WindFarmData(param_filepath)
@@ -36,8 +38,9 @@ def runBB(args): # , blackbox, wind_farm_data):
     point_filepath = getPath(args.point, includes_file=True)
 
     x, y = getPoint(point_filepath)
-    aep = blackbox.compute_aep(x, y, ws=wind_farm_data.WS_BB, wd=wind_farm_data.WD_BB)
     constraints = blackbox.constraints(x, y)
+    aep = blackbox.compute_aep(x, y, ws=wind_farm_data.WS_BB, wd=wind_farm_data.WD_BB)
+    # if return on inversment 
 
     return f"AEP                : {aep} GWh\nSpacing constraint : {constraints['spacing']} m\nPlacing constraint : {constraints['placing']} m"
 

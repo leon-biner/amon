@@ -98,7 +98,7 @@
 
 # File structure
 '''
-    AMON/
+    amon/
     |-- src/
         |-- *.py
     |-- instances/
