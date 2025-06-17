@@ -3,7 +3,7 @@ from pathlib import Path
 
 from py_wake.wind_farm_models.engineering_models import All2AllIterative
 
-from amon.src.utils import getPoint, getPath
+from amon.src.utils import getPoint, getPath, INSTANCES_PARAM_FILEPATHS
 from amon.src.windfarm_data import WindFarmData
 
 
@@ -78,26 +78,24 @@ class Blackbox:
         self.buildable_zone      = buildable_zone
         self.min_dist_between_wt = min_dist_between_wt
     
-    def compute_aep(self, x, y, ws, wd, types=0):
+    def compute_aep(self, x, y, ws, wd,types=0):
         return float(self.wind_farm(x, y, ws=ws, wd=wd, type=types, time=True, n_cpu=None).aep().sum())
     
-    def constraints(self, x, y, turbine_diameters):
-        turbines = [ 
-        {"point": shapely.Point(x_i, y_i), "diameter": d} 
-        for x_i, y_i, d in zip(x, y, turbine_diameters)
-        ]
-        points = [turbine["point"] for turbine in turbines]
+    def constraints(self, x, y):
+        points = [] # first create shapely points
+        for x_i, y_i in zip(x, y):
+            points.append(shapely.Point(x_i, y_i))
         distance_matrix = [shapely.distance(point_i, points) for point_i in points]
         for i in range(len(points)):
             for j in range(0, i):
                 distance_matrix[i][j] = 0
         
         sum_dist_between_wt = 0
-        for i, list_distances in enumerate(distance_matrix):
-            for j, d in enumerate(list_distances):
+        for list_distances in distance_matrix:
+            for d in list_distances:
                 if d == 0:
                     continue
-                sum_dist_between_wt += min(d - turbines[i]['diameter'] - turbines[j]['diameter'], 0)
+                sum_dist_between_wt += min(d - 2*self.min_dist_between_wt, 0)
         distances = shapely.distance(points, self.buildable_zone)
         sum_dist_buildable_zone = sum(distances)
 

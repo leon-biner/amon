@@ -1,14 +1,10 @@
 # main.py
 from amon.src.argparsing import create_parser
-from amon.src.utils import DEFAULT_PORT, INSTANCES_PARAM_FILEPATHS, getPath, simple_excepthook
-import sys
-
+from amon.src.utils import DEFAULT_PORT, INSTANCES_PARAM_FILEPATHS, getPath
 
 def main():
     parser = create_parser(_runBB, _showWindrose, _showTerrain, _runServer, _shutdownServer)
     args = parser.parse_args()
-    if not args.debug:
-        sys.excepthook = simple_excepthook
     args.func(args)
     
 

@@ -11,14 +11,12 @@ def create_parser(run_function, windrose_function, show_terrain_function, server
     parser_run.add_argument("point", metavar="POINT", help=f"Path from current directory to file containing point to evaluate. ")
     parser_run.add_argument("-s", action='store_true', help="Send requests to the server instead of directly running")
     parser_run.add_argument("--port", metavar="PORT", help="Port number")
-    parser_run.add_argument("--debug", action='store_true', help='Show full error messages')
     parser_run.set_defaults(func=run_function)
 
     # Subcommand: windrose (to show the windrose of wind_data_n folder)
     parser_windrose = subparsers.add_parser("show-windrose", help="Display windrose plot")
     parser_windrose.add_argument("wind_data_id", type=int, metavar="WIND_DATA_ID", help="Id of wind data")
     parser_windrose.add_argument("--save", metavar="FIGURE_PATH_PNG", help="Save figure(png) to provided path") 
-    parser_windrose.add_argument("--debug", action='store_true', help='Show full error messages')
     parser_windrose.set_defaults(func=windrose_function)
 
     # Subcommand: show-terrain (to show zone_n, optionally with a given point)
@@ -28,19 +26,16 @@ def create_parser(run_function, windrose_function, show_terrain_function, server
     parser_terrain.add_argument("--save", metavar="FIGURE_PATH_PNG", help="Save figure (png) to provided path")
     parser_terrain.add_argument("--no-grid", action='store_true', help="Remove grid from figure")
     parser_terrain.add_argument("--scale-factor", type=float, metavar="SCALE_FACTOR", help="Factor by which to multiply the size of the terrain")
-    parser_terrain.add_argument("--debug", action='store_true', help='Show full error messages')
     parser_terrain.set_defaults(func=show_terrain_function)
 
     # Subcommand: start server
     parser_server = subparsers.add_parser("serve", help="Start server")
     parser_server.add_argument("--port", type=int, metavar="PORT", help="Port number")
-    parser_server.add_argument("--debug", action='store_true', help='Show full error messages')
     parser_server.set_defaults(func=server_start_function)
 
     #Subcommand : stop server
     parser_server = subparsers.add_parser("shutdown", help="Stop server")
     parser_server.add_argument("--port", type=int, metavar="PORT", help="Port number")
-    parser_server.add_argument("--debug", action='store_true', help='Show full error messages')
     parser_server.set_defaults(func=server_stop_function)
 
     return parser

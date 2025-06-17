@@ -19,21 +19,18 @@ import shapely
 
 from amon.src.utils import AMON_HOME
 
-OBJECTIVE_FUNCTIONS = ['AEP']
-NB_WIND_DATA = 4
-NB_TERRAIN = 5
 
 ACCEPTED_INTERPOLATION_METHODS   = ['linear', 'nearest', 'cubic']
 ACCEPTED_WAKE_DISTANCE_MODELS    = { 'StraightDistance' : StraightDistance, 'TerrainDollowingDistance' : TerrainFollowingDistance }
-ACCEPTED_WIND_TURBINE_PROPERTIES = [ 'name', 'diameter(m)', 'hub_height(m)']
+ACCEPTED_WIND_TURBINE_PROPERTIES = ['name', 'diameter(m)', 'hub_height(m)']
 ACCEPTED_WAKE_DEFICIT_MODELS     = { 'BastankhahGaussianDeficit' : BastankhahGaussianDeficit }
 ACCEPTED_ROTOR_AVG_MODELS        = { 'GaussianOverlapAvgModel' : GaussianOverlapAvgModel }
 ACCEPTED_SUPERPOSITION_MODELS    = { 'SquaredSum' : SquaredSum, 'LinearSum' : LinearSum, 'MaxSum' : MaxSum }
 ACCEPTED_BLOCKAGE_DEFICIT_MODELS = { 'HybridInduction' : HybridInduction, 'RankineHalfBody' : RankineHalfBody, 'VortexCylinder' : VortexCylinder}
 ACCEPTED_DEFLECTION_MODELS       = { 'FugaDeflection' : FugaDeflection, 'GCLHillDeflection' : GCLHillDeflection, 'JimenezWakeDeflection' : JimenezWakeDeflection }
 ACCEPTED_TURBULENCE_MODELS       = { 'CrespoHernandez' : CrespoHernandez, 'GCLTurbulence' : GCLTurbulence, 'FrandsenWeight' : FrandsenWeight }
-REQUIRED_POWERCT_CURVE_HEADERS   = { 'WindSpeed[m/s]', 'Power[MW]', 'Ct'}
-ACCEPTED_BLOCKAGE_SUPERP_MODELS  = { 'LinearSum' : LinearSum, 'MaxSum' : MaxSum}
+REQUIRED_POWERCT_CURVE_HEADERS   = {'WindSpeed', 'Power', 'Ct'}
+# Add blockageDeficitModel's superposition_models
 
 
 class WindFarmData:
@@ -72,20 +69,17 @@ class WindFarmData:
                        "NB_WIND_SPEED_BINS"     : int,
                        "NB_WIND_DIRECTION_BINS" : int,
                        "TI"                     : float,
-                       "ZONE"                   : self.__getZone,                 # returns shapefile.Reader
-                       "OBJECTIVE_FUNCTION"     : self.__getObjectiveFunction,    # returns string 
-                       "INTERPOLATION_METHOD"   : self.__getInterpolationMethod,  # returns string
-                       "SHEAR_FUNCTION"         : self.__getShearFunction,        # returns python function object
-                       "WAKE_DISTANCE"          : self.__getWakeDistance,         # returns class
-                       "WIND_TURBINES"          : self.__getWindTurbines,         # returns dict with data
-                       "NB_WIND_TURBINES"       : int,
-                       "WAKE_DEFICIT_MODEL"     : self.__getWakeDeficitModel,     # returns class
-                       "ROTOR_AVG_MODEL"        : self.__getRotorAvgModel,        # returns class  
-                       "SUPERPOSITION_MODEL"    : self.__getSuperpositionModel,   # returns class  
-                       "BLOCKAGE_DEFICIT_MODEL" : self.__getBlockageDeficitModel, # returns class  
-                       "BLOCKAGE_SUPERP_MODEL"  : self.__getBlockageSuperpModel,  # returns class
-                       "DEFLECTION_MODEL"       : self.__getDeflectionModel,      # returns class  
-                       "TURBULENCE_MODEL"       : self.__getTurbulenceModel,      # returns class  
+                       "ZONE"                   : self.__getZone,                # returns shapefile.Reader
+                       "INTERPOLATION_METHOD"   : self.__getInterpolationMethod, # returns string
+                       "SHEAR_FUNCTION"         : self.__getShearFunction,       # returns python function object
+                       "WAKE_DISTANCE"          : self.__getWakeDistance,        # returns class
+                       "WIND_TURBINES"          : self.__getWindTurbines,        # returns dict with data
+                       "WAKE_DEFICIT_MODEL"     : self.__getWakeDeficitModel,    # returns class
+                       "ROTOR_AVG_MODEL"        : self.__getRotorAvgModel,       # returns class  
+                       "SUPERPOSITION_MODEL"    : self.__getSuperpositionModel,  # returns class  
+                       "BLOCKAGE_DEFICIT_MODEL" : self.__getBlockageDeficitModel,# returns class  
+                       "DEFLECTION_MODEL"       : self.__getDeflectionModel,     # returns class  
+                       "TURBULENCE_MODEL"       : self.__getTurbulenceModel,     # returns class  
                        "CONVERGENCE_TOLERANCE"  : float,
                        "MIN_DISTANCE_BETWEEN_WT": float,
                        "SCALE_FACTOR"           : float
@@ -103,7 +97,6 @@ class WindFarmData:
             "ROTOR_AVG_MODEL"        : None,
             "SUPERPOSITION_MODEL"    : LinearSum,
             "BLOCKAGE_DEFICIT_MODEL" : None,
-            "BLOCKAGE_SUPERP_MODEL"  : LinearSum,
             "DEFLECTION_MODEL"       : None,
             "TURBULENCE_MODEL"       : None,
             "CONVERGENCE_TOLERANCE"  : 1e-6,
@@ -281,14 +274,9 @@ class WindFarmData:
         return { 'boundary_zone'  : shapefile.Reader(boundary_zone_data_filepath),
                  'exclusion_zone' : shapefile.Reader(exclusion_zone_data_filepath) }
 
-    def __getObjectiveFunction(self, function_name):
-        if function_name not in OBJECTIVE_FUNCTIONS:
-            raise ValueError(f"\033[91mError\033[0m: OBJECTIVE_FUNCTION must be one of {OBJECTIVE_FUNCTIONS}, got {function_name}")
-        return function_name
-
     def __getInterpolationMethod(self, name):
         if name not in ACCEPTED_INTERPOLATION_METHODS:
-            raise ValueError(f"\033[91mError\033[0m: INTERPOLATION_METHOD must be one of {ACCEPTED_INTERPOLATION_METHODS}, got {name}")
+            raise ValueError(f"INTERPOLATION_METHOD must be between {ACCEPTED_INTERPOLATION_METHODS}, got {name}")
         return name
 
     def __getShearFunction(self, id):
@@ -306,7 +294,7 @@ class WindFarmData:
                 other_code.append(node)
         function_definitions = [node for node in tree_file_content.body if isinstance(node, ast.FunctionDef)]
         if len(function_definitions) != 1 or other_code:
-            raise ValueError(f"\033[91mError\033[0m: shear_function_{id}.py file must have only one function definition alike f(number): return other_number")
+            raise ValueError(f"shear_function_{id}.py file must have only one function definition alike f(number): return other_number")
 
         shear_function_name = function_definitions[0].name
         spec = importlib.util.spec_from_file_location("shear_function_module", data_filepath) # specifications of the file
@@ -317,7 +305,7 @@ class WindFarmData:
 
     def __getWakeDistance(self, distance_class_name):
         if distance_class_name not in ACCEPTED_WAKE_DISTANCE_MODELS:
-            raise ValueError(f"\033[91mError\033[0m: WAKE_DISTANCE must be one of {list(ACCEPTED_WAKE_DISTANCE_MODELS.keys())}, got {distance_class_name}")
+            raise ValueError(f"WAKE_DISTANCE must be one of {list(ACCEPTED_WAKE_DISTANCE_MODELS.keys())}, got {distance_class_name}")
         return ACCEPTED_WAKE_DISTANCE_MODELS[distance_class_name]
 
     def __getWindTurbines(self, wind_turbines_indices):
@@ -326,7 +314,7 @@ class WindFarmData:
         for index in wind_turbines_indices:
             data_folder_path = AMON_HOME / 'data' / 'wind_turbines' / f'wind_turbine_{index}'
             if not data_folder_path.is_dir():
-                raise FileNotFoundError(f"\033[91mError\033[0m: No wind turbine for index = {index}, no directory at {data_folder_path}")
+                raise FileNotFoundError(f"No wind turbine for index = {index}, no directory at {data_folder_path}")
             
             # dealing with the properties
             with open(data_folder_path / 'properties.csv') as properties_file:
@@ -341,7 +329,7 @@ class WindFarmData:
             powerct_curve_file_data = pd.read_csv(data_folder_path / 'powerct_curve.csv')
             headers = powerct_curve_file_data.columns
             if not REQUIRED_POWERCT_CURVE_HEADERS.issubset(headers):
-                raise ValueError(f"\033[91mError\033[0m: PowerCt curve headers must include {REQUIRED_POWERCT_CURVE_HEADERS}")
+                raise ValueError(f"PowerCt curve headers must include {REQUIRED_POWERCT_CURVE_HEADERS}")
             wind_speed_values = powerct_curve_file_data.WindSpeed.values
             power_values = powerct_curve_file_data.Power.values*1000
             ct_values = powerct_curve_file_data.Ct.values
@@ -351,37 +339,32 @@ class WindFarmData:
 
     def __getWakeDeficitModel(self, wake_deficit_model_class_name):
         if wake_deficit_model_class_name not in ACCEPTED_WAKE_DEFICIT_MODELS:
-            raise ValueError(f"\033[91mError\033[0m: WAKE_DEFICIT_MODEL must be one of {list(ACCEPTED_WAKE_DEFICIT_MODELS.keys())}, got {wake_deficit_model_class_name}")
+            raise ValueError(f"WAKE_DEFICIT_MODEL must be one of {list(ACCEPTED_WAKE_DEFICIT_MODELS.keys())}, got {wake_deficit_model_class_name}")
         return ACCEPTED_WAKE_DEFICIT_MODELS[wake_deficit_model_class_name]
 
     def __getRotorAvgModel(self, rotor_avg_model_class_name):
         if rotor_avg_model_class_name not in ACCEPTED_ROTOR_AVG_MODELS:
-            raise ValueError(f"\033[91mError\033[0m: ROTOR_AVG_MODEL must be one of {list(ACCEPTED_ROTOR_AVG_MODELS.keys())}, got {rotor_avg_model_class_name}")
+            raise ValueError(f"ROTOR_AVG_MODEL must be one of {list(ACCEPTED_ROTOR_AVG_MODELS.keys())}, got {rotor_avg_model_class_name}")
         return ACCEPTED_ROTOR_AVG_MODELS[rotor_avg_model_class_name]
     
     def __getSuperpositionModel(self, superposition_model_class_name):
         if superposition_model_class_name not in ACCEPTED_SUPERPOSITION_MODELS:
-            raise ValueError(f"\033[91mError\033[0m: SUPERPOSITION_MODEL must be one of {list(ACCEPTED_SUPERPOSITION_MODELS.keys())}, got {superposition_model_class_name}")
+            raise ValueError(f"SUPERPOSITION_MODEL must be one of {list(ACCEPTED_SUPERPOSITION_MODELS.keys())}, got {superposition_model_class_name}")
         return ACCEPTED_SUPERPOSITION_MODELS[superposition_model_class_name]
     
     def __getBlockageDeficitModel(self, blockage_deficit_model_class_name):
         if blockage_deficit_model_class_name not in ACCEPTED_BLOCKAGE_DEFICIT_MODELS:
-            raise ValueError(f"\033[91mError\033[0m: BLOCKAGE_DEFICIT_MODEL must be one of {list(ACCEPTED_BLOCKAGE_DEFICIT_MODELS.keys())}, got {blockage_deficit_model_class_name}")
+            raise ValueError(f"BLOCKAGE_DEFICIT_MODEL must be one of {list(ACCEPTED_BLOCKAGE_DEFICIT_MODELS.keys())}, got {blockage_deficit_model_class_name}")
         return ACCEPTED_BLOCKAGE_DEFICIT_MODELS[blockage_deficit_model_class_name]
-
-    def __getBlockageSuperpModel(self, superposition_model_class_name):
-        if superposition_model_class_name not in ACCEPTED_BLOCKAGE_SUPERP_MODELS:
-            raise ValueError(f"\033[91mError\033[0m: SUPERPOSITION_MODEL must be one of {list(ACCEPTED_BLOCKAGE_SUPERP_MODELS.keys())}, got {superposition_model_class_name}")
-        return ACCEPTED_BLOCKAGE_SUPERP_MODELS[superposition_model_class_name]
 
     def __getDeflectionModel(self, deflection_model_class_name):
         if deflection_model_class_name not in ACCEPTED_DEFLECTION_MODELS:
-            raise ValueError(f"\033[91mError\033[0m: DEFLECTION_MODEL must be one of {list(ACCEPTED_DEFLECTION_MODELS.keys())}, got {deflection_model_class_name}")
+            raise ValueError(f"DEFLECTION_MODEL must be one of {list(ACCEPTED_DEFLECTION_MODELS.keys())}, got {deflection_model_class_name}")
         return ACCEPTED_DEFLECTION_MODELS[deflection_model_class_name]
     
     def __getTurbulenceModel(self, turbulence_model_class_name):
         if turbulence_model_class_name not in ACCEPTED_TURBULENCE_MODELS:
-            raise ValueError(f"\033[91mError\033[0m: TURBULENCE_MODEL must be one of {list(ACCEPTED_TURBULENCE_MODELS.keys())}, got {turbulence_model_class_name}")
+            raise ValueError(f"TURBULENCE_MODEL must be one of {list(ACCEPTED_TURBULENCE_MODELS.keys())}, got {turbulence_model_class_name}")
         return ACCEPTED_TURBULENCE_MODELS[turbulence_model_class_name]
 
 

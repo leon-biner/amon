@@ -1,7 +1,6 @@
 # utils.py
 from pathlib import Path
 import ast
-import sys
 
 # Default port
 DEFAULT_PORT = 8765
@@ -42,7 +41,3 @@ def getPath(path, includes_file=True):
         except Exception:
             raise FileNotFoundError(f"\033[91mINPUT ERROR\033[0m: Invalid save path provided {path}")
         return path
-
-def simple_excepthook(exctype, value, tb):
-    print(value)
-    sys.exit(1)

@@ -12,7 +12,7 @@ def runBBRequest(args):
             }
         )
     except requests.exceptions.ConnectionError:
-        raise requests.exceptions.ConnectionError(f"\033[91mError\033[0m: Could not connect to server at https://localhost:{args.port}")
+        return (f"\033[91mError\033[0m: Could not connect to server at https://localhost:{args.port}")
 
     return response.text
 
@@ -55,4 +55,4 @@ def shutdownServer(args):
     except requests.exceptions.ConnectionError: # I am shutting down the server by killing its process, so connection breaks
         print("Server shut down successfully")
     else:
-        print("Server is still up")
+        print("Server has not shut down")
