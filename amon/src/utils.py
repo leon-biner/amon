@@ -2,6 +2,10 @@
 from pathlib import Path
 import ast
 import sys
+import numpy as np
+
+
+from py_wake.superposition_models import SquaredSum
 
 # Default port
 DEFAULT_PORT = 8765
@@ -16,10 +20,20 @@ INSTANCES_PARAM_FILEPATHS = [ AMON_HOME / 'instances' / '1' / 'params.txt' ]
 def getPoint(point_filepath):
     if point_filepath is None:
         return None, None
-    with open(point_filepath, "r") as file:
-                    content = file.read().splitlines() 
-                    X0 = ast.literal_eval(content[0])
-                    return [float(x) for x in X0[0::2]], [float(y) for y in X0[1::2]]
+    with open(point_filepath, 'r') as file:
+        content = file.read().splitlines()
+        point = {}
+        keys = ['coords', 'turbines', 'heights', 'yaw']
+        point['turbines'] = 0 # Default values
+        point['heights']  = None
+        point['yaw']      = None
+        for line in content:
+            for key in keys:
+                if line.startswith(key):
+                    point[key] = ast.literal_eval(line[len(key):].strip())
+        if not point['yaw']:
+            point['yaw'] = [0 for _ in range(int(len(point['coords'])/2))]
+        return point
 
 # Reads a string and returns the corresponding path
 def getPath(path, includes_file=True):
@@ -46,3 +60,8 @@ def getPath(path, includes_file=True):
 def simple_excepthook(exctype, value, tb):
     print(value)
     sys.exit(1)
+
+class SafeSquaredSum(SquaredSum):
+    def __call__(self, deficit_jxxx, **kwargs):
+        deficit_jxxx = np.maximum(deficit_jxxx, 0)
+        return super().__call__(deficit_jxxx, **kwargs)

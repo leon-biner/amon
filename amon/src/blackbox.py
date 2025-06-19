@@ -21,11 +21,17 @@ def runBB(args): # , blackbox, wind_farm_data):
     # Construct the blackbox
     wind_farm_data = WindFarmData(param_filepath)
 
+    print(wind_farm_data.wind_turbines._diameters)
+    print('------------')
+    for i in range(len(wind_farm_data.wind_turbines._diameters)):
+        print(wind_farm_data.wind_turbines.diameter(i), end='=?=')
+        print(wind_farm_data.wind_turbines._diameters[i])
+
     wind_farm = All2AllIterative( site                  = wind_farm_data.site,
                                   windTurbines          = wind_farm_data.wind_turbines,
                                   wake_deficitModel     = wind_farm_data.wake_deficit_model,
                                   superpositionModel    = wind_farm_data.superposition_model,
-                                  blockage_deficitModel = wind_farm_data.blockage_deficit_model,
+                                  blockage_deficitModel = None, # wind_farm_data.blockage_deficit_model,
                                   deflectionModel       = wind_farm_data.deflection_model,
                                   turbulenceModel       = wind_farm_data.turbulence_model,
                                   rotorAvgModel         = wind_farm_data.rotor_avg_model,
@@ -37,9 +43,28 @@ def runBB(args): # , blackbox, wind_farm_data):
     # Get the path to the point to evaluate
     point_filepath = getPath(args.point, includes_file=True)
 
-    x, y = getPoint(point_filepath)
-    constraints = blackbox.constraints(x, y)
-    aep = blackbox.compute_aep(x, y, ws=wind_farm_data.WS_BB, wd=wind_farm_data.WD_BB)
+    point = getPoint(point_filepath)
+    x, y = [float(x) for x in point['coords'][0::2]], [float(y) for y in point['coords'][1::2]]
+    types = point['turbines']
+    heights = point['heights']
+    yaw_angles = point['yaw']
+    if isinstance(types, int):
+        diameters = [wind_farm_data.wind_turbines.diameter(0) for _ in range(len(x))]
+    else:
+        diameters = [wind_farm_data.wind_turbines.diameter(i) for i in types]
+    print("Diameters :")
+    print(diameters)
+    print("coords :")
+    print(x, '\n', y)
+    print('types :')
+    print(types)
+    print('heights')
+    print(heights)
+    print('yaw angles')
+    print(yaw_angles)
+
+    constraints = blackbox.constraints(x, y, turbine_diameters=diameters)
+    aep = blackbox.compute_aep(x, y, ws=wind_farm_data.WS_BB, wd=wind_farm_data.WD_BB, types=types, heights=heights, yaw_angles=yaw_angles)
     # if return on inversment 
 
     return f"AEP                : {aep} GWh\nSpacing constraint : {constraints['spacing']} m\nPlacing constraint : {constraints['placing']} m"
@@ -78,8 +103,8 @@ class Blackbox:
         self.buildable_zone      = buildable_zone
         self.min_dist_between_wt = min_dist_between_wt
     
-    def compute_aep(self, x, y, ws, wd, types=0):
-        return float(self.wind_farm(x, y, ws=ws, wd=wd, type=types, time=True, n_cpu=None).aep().sum())
+    def compute_aep(self, x, y, ws, wd, types, heights, yaw_angles):
+        return float(self.wind_farm(x, y, ws=ws, wd=wd, type=types, time=True, n_cpu=None, h=heights, yaw=yaw_angles).aep().sum())
     
     def constraints(self, x, y, turbine_diameters):
         turbines = [ 

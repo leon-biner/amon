@@ -15,9 +15,10 @@ from py_wake.rotor_avg_models import GaussianOverlapAvgModel
 from py_wake.superposition_models import SquaredSum, LinearSum, MaxSum
 from py_wake.deflection_models import FugaDeflection, GCLHillDeflection, JimenezWakeDeflection 
 from py_wake.turbulence_models import CrespoHernandez, GCLTurbulence, FrandsenWeight
+from py_wake.site.shear import PowerShear
 import shapely
 
-from amon.src.utils import AMON_HOME
+from amon.src.utils import AMON_HOME, SafeSquaredSum
 
 OBJECTIVE_FUNCTIONS = ['AEP']
 NB_WIND_DATA = 4
@@ -28,7 +29,7 @@ ACCEPTED_WAKE_DISTANCE_MODELS    = { 'StraightDistance' : StraightDistance, 'Ter
 ACCEPTED_WIND_TURBINE_PROPERTIES = [ 'name', 'diameter(m)', 'hub_height(m)']
 ACCEPTED_WAKE_DEFICIT_MODELS     = { 'BastankhahGaussianDeficit' : BastankhahGaussianDeficit }
 ACCEPTED_ROTOR_AVG_MODELS        = { 'GaussianOverlapAvgModel' : GaussianOverlapAvgModel }
-ACCEPTED_SUPERPOSITION_MODELS    = { 'SquaredSum' : SquaredSum, 'LinearSum' : LinearSum, 'MaxSum' : MaxSum }
+ACCEPTED_SUPERPOSITION_MODELS    = { 'SquaredSum' : SafeSquaredSum, 'LinearSum' : LinearSum, 'MaxSum' : MaxSum }
 ACCEPTED_BLOCKAGE_DEFICIT_MODELS = { 'HybridInduction' : HybridInduction, 'RankineHalfBody' : RankineHalfBody, 'VortexCylinder' : VortexCylinder}
 ACCEPTED_DEFLECTION_MODELS       = { 'FugaDeflection' : FugaDeflection, 'GCLHillDeflection' : GCLHillDeflection, 'JimenezWakeDeflection' : JimenezWakeDeflection }
 ACCEPTED_TURBULENCE_MODELS       = { 'CrespoHernandez' : CrespoHernandez, 'GCLTurbulence' : GCLTurbulence, 'FrandsenWeight' : FrandsenWeight }
@@ -169,11 +170,11 @@ class WindFarmData:
                 wind_rose_data.iloc[j,i] = sum((lower <= TS_sector) & (TS_sector < upper)) / N
 
         wind_rose_dataset = xr.Dataset( data_vars={"P":(("wd", "ws"), wind_rose_data.values.T), "TI":raw_data['TI']},
-                                           coords={"wd":wind_direction_bins, "ws":wind_speed_bins[1:]} ) 
+                                           coords={"wd":wind_direction_bins, "ws":wind_speed_bins[1:]} )
 
         self.site = XRSite( ds            = wind_rose_dataset,
                             interp_method = raw_data['INTERPOLATION_METHOD'],
-                            shear         = raw_data['SHEAR_FUNCTION'],
+                            shear         = PowerShear(alpha=0.2), # power_law_shear,# raw_data['SHEAR_FUNCTION'],
                             distance      = raw_data['WAKE_DISTANCE']() if raw_data['WAKE_DISTANCE'] is not None else None ) 
 
         #-----------------------#
@@ -202,7 +203,10 @@ class WindFarmData:
         # Setting objects
         self.rotor_avg_model          = rotor_avg_model_class() if rotor_avg_model_class is not None else None
         self.superposition_model      = superposition_model_class()
-        self.wake_deficit_model       = wake_deficit_model_class( use_effective_ws=True,
+        if wake_deficit_model_class.__name__ == 'FugaDeficit':
+            self.wake_deficit_model       = wake_deficit_model_class(rotorAvgModel=self.rotor_avg_model )
+        else:
+            self.wake_deficit_model       = wake_deficit_model_class( use_effective_ws=True,
                                                                   rotorAvgModel=self.rotor_avg_model )
         self.blockage_deficit_model   = blockage_deficit_model_class( superpositionModel= LinearSum(),
                                                                       rotorAvgModel=self.rotor_avg_model,
@@ -342,9 +346,17 @@ class WindFarmData:
             headers = powerct_curve_file_data.columns
             if not REQUIRED_POWERCT_CURVE_HEADERS.issubset(headers):
                 raise ValueError(f"\033[91mError\033[0m: PowerCt curve headers must include {REQUIRED_POWERCT_CURVE_HEADERS}")
-            wind_speed_values = powerct_curve_file_data.WindSpeed.values
-            power_values = powerct_curve_file_data.Power.values*1000
-            ct_values = powerct_curve_file_data.Ct.values
+            wind_speed_values = powerct_curve_file_data['WindSpeed[m/s]'].values
+            power_values = powerct_curve_file_data['Power[MW]'].values*1000
+            raw_ct_values = powerct_curve_file_data['Ct'].values
+            ct_values = []
+            for val in raw_ct_values:
+                if val >= 1:
+                    ct_values.append(0.99)
+                elif val <= 0:
+                    ct_values.append(0.01)
+                else:
+                    ct_values.append(val)
             wt_data['powerct_curves'].append(PowerCtTabular(wind_speed_values, power_values, 'kW', ct_values))
         
         return wt_data
