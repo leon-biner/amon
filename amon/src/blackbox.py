@@ -3,7 +3,7 @@ from pathlib import Path
 
 from py_wake.wind_farm_models.engineering_models import All2AllIterative
 
-from amon.src.utils import getPoint, getPath
+from amon.src.utils import getPoint, getPath, plot3D
 from amon.src.windfarm_data import WindFarmData
 
 
@@ -21,24 +21,22 @@ def runBB(args): # , blackbox, wind_farm_data):
     # Construct the blackbox
     wind_farm_data = WindFarmData(param_filepath)
 
-    print(wind_farm_data.wind_turbines._diameters)
-    print('------------')
-    for i in range(len(wind_farm_data.wind_turbines._diameters)):
-        print(wind_farm_data.wind_turbines.diameter(i), end='=?=')
-        print(wind_farm_data.wind_turbines._diameters[i])
+    # for i in range(len(wind_farm_data.wind_turbines._diameters)):
+        # print(wind_farm_data.wind_turbines.diameter(i), end='=?=')
+        # print(wind_farm_data.wind_turbines._diameters[i])
 
     wind_farm = All2AllIterative( site                  = wind_farm_data.site,
                                   windTurbines          = wind_farm_data.wind_turbines,
                                   wake_deficitModel     = wind_farm_data.wake_deficit_model,
                                   superpositionModel    = wind_farm_data.superposition_model,
-                                  blockage_deficitModel = None, # wind_farm_data.blockage_deficit_model,
+                                  blockage_deficitModel = wind_farm_data.blockage_deficit_model,
                                   deflectionModel       = wind_farm_data.deflection_model,
                                   turbulenceModel       = wind_farm_data.turbulence_model,
                                   rotorAvgModel         = wind_farm_data.rotor_avg_model,
                                   convergence_tolerance = wind_farm_data.convergence_tolerance ) 
     buildable_zone = wind_farm_data.buildable_zone
 
-    blackbox = Blackbox(wind_farm, buildable_zone, wind_farm_data.min_dist_between_wt)
+    blackbox = Blackbox(wind_farm, buildable_zone)
 
     # Get the path to the point to evaluate
     point_filepath = getPath(args.point, includes_file=True)
@@ -46,28 +44,38 @@ def runBB(args): # , blackbox, wind_farm_data):
     point = getPoint(point_filepath)
     x, y = [float(x) for x in point['coords'][0::2]], [float(y) for y in point['coords'][1::2]]
     types = point['turbines']
-    heights = point['heights']
+    elevation_function = wind_farm_data.elevation_function
+    heights = []
+    if point['heights'] is None:
+        for x_i, y_i, type in zip(x, y, types): # If height not specified, the model's default height is used
+            heights.append(wind_farm_data.wind_turbines.hub_height(type) + elevation_function(x_i, y_i))
+    else:
+        for height, x_i, y_i in zip(point['heights'], x, y):
+            heights.append(height + elevation_function(x_i, y_i))
     yaw_angles = point['yaw']
     if isinstance(types, int):
         diameters = [wind_farm_data.wind_turbines.diameter(0) for _ in range(len(x))]
     else:
         diameters = [wind_farm_data.wind_turbines.diameter(i) for i in types]
-    print("Diameters :")
-    print(diameters)
-    print("coords :")
-    print(x, '\n', y)
-    print('types :')
-    print(types)
-    print('heights')
-    print(heights)
-    print('yaw angles')
-    print(yaw_angles)
+    # print("Diameters :")
+    # print(diameters)
+    # print("coords :")
+    # print(x, '\n', y)
+    # print('types :')
+    # print(types)
+    # print('heights')
+    # print(heights)
+    # print('yaw angles')
+    # print(yaw_angles)
 
-    constraints = blackbox.constraints(x, y, turbine_diameters=diameters)
     aep = blackbox.compute_aep(x, y, ws=wind_farm_data.WS_BB, wd=wind_farm_data.WD_BB, types=types, heights=heights, yaw_angles=yaw_angles)
-    # if return on inversment 
-
-    return f"AEP                : {aep} GWh\nSpacing constraint : {constraints['spacing']} m\nPlacing constraint : {constraints['placing']} m"
+    constraints = blackbox.constraints(x, y, turbine_diameters=diameters)
+    if wind_farm_data.obj_function.lower() == 'aep':
+        return f"AEP                : {aep} GWh\nSpacing constraint : {constraints['spacing']} m\nPlacing constraint : {constraints['placing']} m"
+    elif wind_farm_data.lower() == 'roi':
+        pass
+    else:
+        pass
 
 # def buildBB(args):
     # # Figure out if user provided instance number or his own param file
@@ -98,10 +106,9 @@ def runBB(args): # , blackbox, wind_farm_data):
     # return blackbox, wind_farm_data
 
 class Blackbox:
-    def __init__(self, wind_farm, buildable_zone, min_dist_between_wt):
+    def __init__(self, wind_farm, buildable_zone):
         self.wind_farm           = wind_farm
         self.buildable_zone      = buildable_zone
-        self.min_dist_between_wt = min_dist_between_wt
     
     def compute_aep(self, x, y, ws, wd, types, heights, yaw_angles):
         return float(self.wind_farm(x, y, ws=ws, wd=wd, type=types, time=True, n_cpu=None, h=heights, yaw=yaw_angles).aep().sum())

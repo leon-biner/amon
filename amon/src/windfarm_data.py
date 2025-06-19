@@ -18,7 +18,14 @@ from py_wake.turbulence_models import CrespoHernandez, GCLTurbulence, FrandsenWe
 from py_wake.site.shear import PowerShear
 import shapely
 
-from amon.src.utils import AMON_HOME, SafeSquaredSum
+from amon.src.utils import AMON_HOME
+
+# Prevents negative deficits, which don't make sense physically and break PyWake
+class SafeSquaredSum(SquaredSum):
+    def __call__(self, deficit_jxxx, **kwargs):
+        deficit_jxxx = np.maximum(deficit_jxxx, 0)
+        return super().__call__(deficit_jxxx, **kwargs)
+
 
 OBJECTIVE_FUNCTIONS = ['AEP']
 NB_WIND_DATA = 4
@@ -60,7 +67,6 @@ class WindFarmData:
                 - Physical models
                 - Convergence tolerance
                 - Wind speed and direction data
-                - Minimal distance between turbines
         '''
 
         #---------------------------------#
@@ -76,7 +82,7 @@ class WindFarmData:
                        "ZONE"                   : self.__getZone,                 # returns shapefile.Reader
                        "OBJECTIVE_FUNCTION"     : self.__getObjectiveFunction,    # returns string 
                        "INTERPOLATION_METHOD"   : self.__getInterpolationMethod,  # returns string
-                       "SHEAR_FUNCTION"         : self.__getShearFunction,        # returns python function object
+                       "ELEVATION_FUNCTION"     : self.__getElevationFunction,    # returns python function object
                        "WAKE_DISTANCE"          : self.__getWakeDistance,         # returns class
                        "WIND_TURBINES"          : self.__getWindTurbines,         # returns dict with data
                        "NB_WIND_TURBINES"       : int,
@@ -88,7 +94,6 @@ class WindFarmData:
                        "DEFLECTION_MODEL"       : self.__getDeflectionModel,      # returns class  
                        "TURBULENCE_MODEL"       : self.__getTurbulenceModel,      # returns class  
                        "CONVERGENCE_TOLERANCE"  : float,
-                       "MIN_DISTANCE_BETWEEN_WT": float,
                        "SCALE_FACTOR"           : float
                      }
         
@@ -98,7 +103,7 @@ class WindFarmData:
             "NB_WIND_DIRECTION_BINS" : 36,
             "TI"                     : 0.1,
             "INTERPOLATION_METHOD"   : 'linear',
-            "SHEAR_FUNCTION"         : None,
+            "ELEVATION_FUNCTION"     : lambda x, y: 0, # no elevation
             "WAKE_DISTANCE"          : None,
             "WAKE_DEFICIT_MODEL"     : BastankhahGaussianDeficit,
             "ROTOR_AVG_MODEL"        : None,
@@ -174,7 +179,7 @@ class WindFarmData:
 
         self.site = XRSite( ds            = wind_rose_dataset,
                             interp_method = raw_data['INTERPOLATION_METHOD'],
-                            shear         = PowerShear(alpha=0.2), # power_law_shear,# raw_data['SHEAR_FUNCTION'],
+                            shear         = PowerShear(alpha=0.2), # PowerShear is the most common shear function, and 0.2 is common when on land 
                             distance      = raw_data['WAKE_DISTANCE']() if raw_data['WAKE_DISTANCE'] is not None else None ) 
 
         #-----------------------#
@@ -254,13 +259,10 @@ class WindFarmData:
             buildable_zone = shapely.difference(buildable_zone, polygon)
 
         self.buildable_zone = buildable_zone
-        
-        self.min_dist_between_wt = raw_data['MIN_DISTANCE_BETWEEN_WT']
 
-        '''This will all dissapear'''
-        # for plotting the terrain, we need the boundary and buildable zones separately
-        self.boundary_zone = boundary_zone
-        self.exclusion_zone = exclusion_zone
+        self.elevation_function = raw_data['ELEVATION_FUNCTION']
+        
+        self.obj_function = raw_data['OBJECTIVE_FUNCTION']
 
 
     #-------------------#
@@ -295,28 +297,25 @@ class WindFarmData:
             raise ValueError(f"\033[91mError\033[0m: INTERPOLATION_METHOD must be one of {ACCEPTED_INTERPOLATION_METHODS}, got {name}")
         return name
 
-    def __getShearFunction(self, id):
-        id = self.__cast(id, int, "SHEAR_FUNCTION")
-        data_filepath = AMON_HOME / 'data' / 'shear_functions' / f'shear_function_{id}.py'
+    def __getElevationFunction(self, id):
+        id = self.__cast(id, int, "ELEVATION_FUNCTION")
+        data_filepath = AMON_HOME / 'data' / 'elevation_functions' / f'elevation_function_{id}.py'
         with open(data_filepath, 'r') as file:
             file_content = file.read()
         tree_file_content = ast.parse(file_content, filename=data_filepath)
         function_definitions = []
-        other_code = []
         for node in tree_file_content.body:
             if isinstance(node, ast.FunctionDef): #if it's a function definition
                 function_definitions.append(node)
-            elif not isinstance(node, (ast.FunctionDef, ast.Expr)): #if it's not a function def or comment / docstring
-                other_code.append(node)
         function_definitions = [node for node in tree_file_content.body if isinstance(node, ast.FunctionDef)]
-        if len(function_definitions) != 1 or other_code:
-            raise ValueError(f"\033[91mError\033[0m: shear_function_{id}.py file must have only one function definition alike f(number): return other_number")
+        if len(function_definitions) != 1:
+            raise ValueError(f"\033[91mError\033[0m: elevation_function_{id}.py file must have only one function definition alike f(numbers): return other_number")
 
-        shear_function_name = function_definitions[0].name
-        spec = importlib.util.spec_from_file_location("shear_function_module", data_filepath) # specifications of the file
+        elevation_function_name = function_definitions[0].name
+        spec = importlib.util.spec_from_file_location("elevation_function_module", data_filepath) # specifications of the file
         module = importlib.util.module_from_spec(spec) # make empty module
         spec.loader.exec_module(module) # execute the code and load it into the module object
-        return getattr(module, shear_function_name) # select the part with shear_function_name
+        return getattr(module, elevation_function_name) # select the part with elevation_function_name
 
 
     def __getWakeDistance(self, distance_class_name):

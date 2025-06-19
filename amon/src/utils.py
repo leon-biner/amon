@@ -5,8 +5,6 @@ import sys
 import numpy as np
 
 
-from py_wake.superposition_models import SquaredSum
-
 # Default port
 DEFAULT_PORT = 8765
 
@@ -24,7 +22,7 @@ def getPoint(point_filepath):
         content = file.read().splitlines()
         point = {}
         keys = ['coords', 'turbines', 'heights', 'yaw']
-        point['turbines'] = 0 # Default values
+        point['turbines'] = None
         point['heights']  = None
         point['yaw']      = None
         for line in content:
@@ -33,6 +31,8 @@ def getPoint(point_filepath):
                     point[key] = ast.literal_eval(line[len(key):].strip())
         if not point['yaw']:
             point['yaw'] = [0 for _ in range(int(len(point['coords'])/2))]
+        if not point['turbines']:
+            point['turbines'] = [0 for _ in range(int(len(point['coords'])/2))]
         return point
 
 # Reads a string and returns the corresponding path
@@ -61,7 +61,13 @@ def simple_excepthook(exctype, value, tb):
     print(value)
     sys.exit(1)
 
-class SafeSquaredSum(SquaredSum):
-    def __call__(self, deficit_jxxx, **kwargs):
-        deficit_jxxx = np.maximum(deficit_jxxx, 0)
-        return super().__call__(deficit_jxxx, **kwargs)
+def plot3D(f, lx, ly, ux, uy):
+    import matplotlib.pyplot as plt
+    x = np.arange(lx, ux, step=(ux-lx)/500)
+    y = np.arange(ly, uy, step=(uy-ly)/500)
+    X, Y = np.meshgrid(x, y)
+    Z = np.array([[f(x, y) for x, y in zip(row_x, row_y)] for row_x, row_y in zip(X, Y)])
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.plot_surface(X, Y, Z)
+    plt.show()

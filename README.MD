@@ -9,7 +9,7 @@ We have :
     4x Windrose
 
 Instance 1:
-    - Wind data : 1
+    - Wind data : 2
     - Terrain   : 1
     - Turbine   : V80
     - OBJ func  : aep
@@ -17,7 +17,7 @@ Instance 1:
     - Nb turbines  : 30
 
 Instance 2:
-    - Wind data : 2
+    - Wind data : 1
     - Terrain   : 2
     - Turbines  : V80, V82, OpenWind
     - OBJ func  : ROI
@@ -32,6 +32,7 @@ Instance 4:
     - Wind data : 4
     - Terrain   : 4
     - Turbines  : 
+    ajouter contrainte budget 
 
 Instance 5:
     - Wind data : 2

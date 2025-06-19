@@ -105,8 +105,8 @@
         |-- instance_n/
             |-- param_file.txt
     |-- data/
-        |-- shear_functions/
-            |-- shear_function_n.py
+        |-- elevation_functions/
+            |-- elevation_function_n.py
         |-- wind_data/
             |-- wind_data_n/
                 |-- wind_direction.csv
