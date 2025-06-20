@@ -12,7 +12,14 @@ DEFAULT_PORT = 8765
 AMON_HOME = Path(__file__).parents[1]
 
 # Path to param file for each instance (corresponding index)
-INSTANCES_PARAM_FILEPATHS = [ AMON_HOME / 'instances' / '1' / 'params.txt' ]
+INSTANCES_PARAM_FILEPATHS = [ AMON_HOME / 'instances' / '1' / 'params.txt',
+                              None,
+                              None,
+                              None,
+                              AMON_HOME / 'instances' / '5' / 'params.txt' ]
+
+# Names of available wind turbines in order
+AVAILABLE_TURBINES_NAMES = ['V80', 'OpenWind', 'IEA_22MW', 'V82', 'Bespoke_6MW', 'IEA_3.4MW']
 
 # Reads the point file
 def getPoint(point_filepath):
@@ -21,18 +28,18 @@ def getPoint(point_filepath):
     with open(point_filepath, 'r') as file:
         content = file.read().splitlines()
         point = {}
-        keys = ['coords', 'turbines', 'heights', 'yaw']
-        point['turbines'] = None
+        keys = ['coords', 'models', 'heights', 'yaw_angles']
+        point['models'] = None
         point['heights']  = None
-        point['yaw']      = None
+        point['yaw_angles']      = None
         for line in content:
             for key in keys:
                 if line.startswith(key):
                     point[key] = ast.literal_eval(line[len(key):].strip())
-        if not point['yaw']:
-            point['yaw'] = [0 for _ in range(int(len(point['coords'])/2))]
-        if not point['turbines']:
-            point['turbines'] = [0 for _ in range(int(len(point['coords'])/2))]
+        if not point['yaw_angles']:
+            point['yaw_angles'] = [0 for _ in range(int(len(point['coords'])/2))]
+        if not point['models']:
+            point['models'] = [0 for _ in range(int(len(point['coords'])/2))]
         return point
 
 # Reads a string and returns the corresponding path
@@ -57,6 +64,7 @@ def getPath(path, includes_file=True):
             raise FileNotFoundError(f"\033[91mINPUT ERROR\033[0m: Invalid save path provided {path}")
         return path
 
+# For simpler error messages when not in debug mode
 def simple_excepthook(exctype, value, tb):
     print(value)
     sys.exit(1)
