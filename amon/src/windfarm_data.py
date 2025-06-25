@@ -32,7 +32,7 @@ NB_WIND_DATA = 4
 NB_TERRAIN = 5
 
 # ACCEPTED_INTERPOLATION_METHODS   = ['linear', 'nearest', 'cubic']
-REQUIRED_WIND_TURBINE_PROPERTIES = {'name', 'diameter(m)', 'hub_height(m)'}
+REQUIRED_WIND_TURBINE_PROPERTIES = {'name', 'diameter[m]', 'hub_height[m]'}
 ACCEPTED_BBO_VALUES              = {'OBJ', 'PLACING', 'SPACING', 'BUDGET', 'HEIGHT'}
 # ACCEPTED_SUPERPOSITION_MODELS    = { 'SquaredSum' : SafeSquaredSum, 'LinearSum' : LinearSum, 'MaxSum' : MaxSum }
 REQUIRED_POWERCT_CURVE_HEADERS   = {'WindSpeed[m/s]', 'Power[MW]', 'Ct'}
@@ -270,8 +270,8 @@ class WindFarmData:
                 if not REQUIRED_WIND_TURBINE_PROPERTIES.issubset(properties):
                     raise ValueError(f"\033[91mError\033[0m: csv header must include {REQUIRED_WIND_TURBINE_PROPERTIES}")
             wt_data['names'].append(properties['name'])
-            wt_data['diameters'].append(int(properties['diameter(m)']))
-            wt_data['hub_heights'].append(int(properties['hub_height(m)']))
+            wt_data['diameters'].append(int(properties['diameter[m]']))
+            wt_data['hub_heights'].append(int(properties['hub_height[m]']))
 
             # dealing with the powerct curve
             powerct_curve_file_data = pd.read_csv(data_folder_path / 'powerct_curve.csv')
