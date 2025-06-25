@@ -1,41 +1,47 @@
-#This is the blueprint for what I want the code to act like
+# blueprint.py
 
+
+#----------------#
+#- Introduction -#
+#----------------#
 '''
-    This is for computing the Annual Energy Production (aep)
-    --------------------------------------------------------
+Blueprint for the AMON code
 
-    We compute the aep through a WindFarmModel object, specifically 
-    a All2AllIterative object, which inherits from the EngineeringWindFarmModel
-    base class, which itself inherits from the WindFarmModel base class. 
-    The optimization variables will be some arguments of its __call__ method, from which we get the aep.
+--------------------------------------------------------
 
-    The constraints are handled outside of the All2AllIterative object, partly using
-    the shapely library
+For every objective function, we need the annual electricity production (aep)
+We compute the aep through a WindFarmModel object, specifically 
+a All2AllIterative object, which inherits from the EngineeringWindFarmModel
+base class, which itself inherits from the WindFarmModel base class. 
+The optimization variables will be some arguments of its __call__ method, from which we get the aep.
 
-    All2AllIterative object  (see https://gitlab.windenergy.dtu.dk/TOPFARM/PyWake/-/blob/master/py_wake/wind_farm_models/engineering_models.py?ref_type=heads)
-    -----------------------
-            This object stores all the information about the wind farm, except the surface. That is
-        handled differently. This stores the wind rose, models for the physical phenomenons, types
-        of turbines, etc. When we call its __call__ method, we provide points and types of turbines, possibly heights,
-        for each point, and we get an aep value. So the optimisation variables are position and type of turbine.
+The constraints are handled outside of the All2AllIterative object, partly using
+the shapely library
 
-        Constructor parameters
-        ----------------------
-            site                  : Site object
-            windTurbines          : WindTurbines object
-            wake_deficitModel     : WakeDeficitModel object
-            rotorAvgModel         : RotorAvgModel object. If not specified, RotorCenter object is used 
-                                    by default
-            superpositionModel    : SuperpositionModel object. If not specified, LinearSum is used
-            blockage_deficitModel : BlockageDeficitModel object. If not specified, blockage correction
-                                    is not considered in the simulation
-            deflectionModel       : DeflectionModel object. If not specified, deflection is not considered
-                                    in the simulation
-            turbulenceModel       : TurbulenceModel object. If not specified, turbulence is not considered
-                                    in the simulation
-            convergence_tolerance : float or None
+All2AllIterative object  (see https://gitlab.windenergy.dtu.dk/TOPFARM/PyWake/-/blob/master/py_wake/wind_farm_models/engineering_models.py?ref_type=heads)
+-----------------------
+        This object stores all the information about the wind farm, except the surface. That is
+    handled differently. This stores the wind rose, models for the physical phenomenons, types
+    of turbines, etc. When we call its __call__ method, we provide points and types of turbines, possibly heights,
+    for each point, and we get an aep value. So the optimisation variables are position and type of turbine.
+
+    Constructor parameters
+    ----------------------
+        site                  : Site object
+        windTurbines          : WindTurbines object
+        wake_deficitModel     : WakeDeficitModel object
+        rotorAvgModel         : RotorAvgModel object. If not specified, RotorCenter object is used 
+                                by default
+        superpositionModel    : SuperpositionModel object. If not specified, LinearSum is used
+        blockage_deficitModel : BlockageDeficitModel object. If not specified, blockage correction
+                                is not considered in the simulation
+        deflectionModel       : DeflectionModel object. If not specified, deflection is not considered
+                                in the simulation
+        turbulenceModel       : TurbulenceModel object. If not specified, turbulence is not considered
+                                in the simulation
+        convergence_tolerance : Float or None
     
-            Note : All deficit models inherit from the DeficitModel class
+        Note : All deficit models inherit from the DeficitModel class
     
     Site object  (We use XRSite, see https://gitlab.windenergy.dtu.dk/TOPFARM/PyWake/-/blob/master/py_wake/site/xrsite.py?ref_type=heads)
     -----------
@@ -52,7 +58,7 @@
                                     "TI" : float} # Joséphine used 0.1, and the examples use that too, not sure why
                             coords={"wd":wd_bin_values, "ws":ws_bin_values} (bin center values)
             interp_method : 'linear', 'nearest' or 'cubic', default is linear
-            shear         : function of one argument (height) that returns a multiplier 
+            shear         : Function of one argument (height) that returns a multiplier 
                             for wind speed. For example, if wind speed in the dataset is
                             ws, the wind speed used for a turbine at height h is ws*shear(h)
             distance      : Distance object, used to set how far we consider the wake effect 
@@ -93,10 +99,70 @@
         depends on the effects of the other turbines, it's a nonlinear coupled problem, which is 
         solved iteratively by PyWake (hence the class name All2AllIterative). The solver stops when 
         the relative change < convergence tolerance.
- 
+
+Constraints
+-----------
+
+We have multiple constraints :
+    Spacing constraint     : There needs to be enough space between turbines
+    Placing constraint     : The turbines need to be inside the determined zone
+    Height constraints     : The turbines cannot be infinitely high
+    Budget constraints
+    Maybe yaw angles constraints
+
+    The buildable zone, aka the zone where turbines can be placed, is defined using shapely polygons.
+The placing constraint is calculated by finding how far away from the zone the turbine is, if it's outside.
+The spacing constraint depends on the diameters of each wind turbine.
+The height constraint depends on the model of wind turbine used.
+
+
+How are the parameters chosen ?
+-------------------------------
+    The wind data (windrose), the zone, the objective function and the wind turbine models all need to be specified in a parameters file.
+Optionaly, one can specify a scale factor for the size of the terrain, an elevation function to add a vertical aspect, and a turbulence intensity.
+If not specified, default values are used.
+As for models, convergence tolerance, and other precision parameters, they are determined by a fidelity number that is passed as an argument to the blackbox
+
+
+How to run the program ?
+------------------------
+    The program uses the "amon" main command to launch it from the terminal, then some subcommands can be used.
+At any point, adding -h to the command will pull up a help menu for more detail. Here are the subcommands :
+    "run"            : run blackbox with a certain instance or param file and a point to evaluate
+    "show-windrose"  : plot the windrose of a certain wind data folder
+    "show-terrain"   : plot a certain terrain, optionaly with a point to plot. Good to determine a starting point
+    "show-elevation" : plot the elevation function used
+    "serve"          : start a local server that handles requests. This prevents reimporting all the libraries at every iteration.
+                       Use -s when running the blackbox to send requests to the server for it to make the calculations instead of doing them from the current session
+    "shutdown"       : shuts down the server
+
+There are multiple arguments and flags, use the -h menu or look at the argarsing.py file for details
+
 '''
 
-# File structure
+#----------------------------#
+#- Description of .py files -#
+#----------------------------#
+'''
+Main files :
+    argparsing.py : Defines the command-line arguments and parses them, making sure they are adequate
+    main.py       : Starts the right process according to the command-line arguments (run the blackbox, show the windrose, start the server, etc)
+    utils.py      : Functions and global variables used across the code
+
+Command-specific files :
+    client.py      : Sends the right request to the server, according to command-line arguments
+    server.py      : Runs the appropriate code according to the request received and responds with the result
+    blackbox.py    : Runs the blackbox with given parameter file, point, seed, and fidelity
+    plot_functions : Plots the windrose or the terrain
+
+Other files :
+    windfarm_data.py : Builds the objects necessary to run the blackbox from the parameter file
+    cost.py          : Defines how the cost over lifetime of the windfarm is calculated
+'''
+
+#------------------#
+#- File structure -#
+#------------------#
 '''
     amon/
     |-- src/
@@ -121,63 +187,21 @@
                 |-- exclusion_zone.shp
 '''
 
-# param_file structure
+#------------------------#
+#- param_file structure -#
+#------------------------#
 '''
     Can have whitelines of random lines in between, as long as the line
     starts with the right parameter name, then whitespace, then the data
     --------------------------------------------------------------------
-    WIND_DATA               <id (index) of wind data file>      (*)
-    NB_WIND_SPEED_BINS      <integer value>
-    NB_WIND_DIRECTION_BINS  <integer value>
-    TI                      <float value>
+    OBJECTIVE_FUNCTION      <name of objective function>        (*)
     ZONE                    <id of zone>                        (*)  
-    INTERPOLATION_METHOD    <name of interpolation method>      ('linear', 'nearest', or 'cubic')
-    SHEAR_FUNCTION          <id (index) of shear function>
-    WAKE_DISTANCE           <name of wake distance class>       ('StraightDistance' or 'TerrainFollowingDistance')            
+    BUDGET                  <Budget in USD>
+    WIND_DATA               <id (index) of wind data file>      (*)
+    TI                      <float value>
+    ELEVATION_FUNCTION      <id (index) of shear function>
     WIND_TURBINES           <ids (indices) of wind turbines>    (*) (separated by commas)
-    WAKE_DEFICIT_MODEL      <name of wake deficit model class>  (example : 'BastankhahGaussianDeficit')
-    ROTOR_AVG_MODEL         <name of rotor avg model class>           
-    SUPERPOSITION_MODEL     <name of superposition model class>
-    BLOCKAGE_DEFICIT_MODEL  <name of blockage deficit model class>
-    DEFLECTION_MODEL        <name of deflection model class>
-    TURBULENCE_MODEL        <name of turbulence model class>
-    CONVERGENCE_TOLERANCE   <float value> 
-    MIN_DISTANCE_BETWEEN_WT <float value>                       (*)
     SCALE_FACTOR            <float value>
     --------------------------------------------------------------------
     Note : the ones with (*) are mandatory, others are optional
-
-    UNITS
-    -----
-    **À remplir
-
-'''
-
-# Blackbox function
-# Input  : param_file, x_positions, x_wind_turbines
-# Output : constraints, aep
-'''
-    # Get the data to construct all objects
-
-    # Construct the Site object
-
-    # Construct the WindTurbines object
-
-    # Construct the physical models objects
-
-    # Construct the All2AllIterative object
-
-    # Construct the buildable zone
-
-    # Compute aep with x_positions and x_wind_turbines
-    # The type (x_wind_turbine) is the id of the wind turbine,
-    # in order of creation. Therefore, create them in the same 
-    # order as they appear in the param file so the user can
-    # know which one corresponds to which type
-
-    # compute the spacing (distance between turbines)
-    # and placing (how far they are from the buildable zone) constraints
-
-    return the bbo : [obj, spacing_constraint, placing_constraint] and the obj
-    
 '''

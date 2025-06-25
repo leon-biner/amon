@@ -57,6 +57,7 @@ class WindFarmData:
                     to be constructed, so we extract the data then build the objects in order
                 2 : Build the objects necessary to construct the All2AllIterative object and to handle the buildable zone
                 3 : Set the buildable zone
+                4 : Set the objective function and budget constraint
             
             ATTRIBUTES
             ----------
@@ -75,45 +76,22 @@ class WindFarmData:
 
         # All parameters and their respective handler function
         # Each handler function returns the parameter's corresponding object, or the data for building it
-        parameters = { "WIND_DATA"              : self.__getWindData,           # returns dict of pandas dataFrames
-                       # "NB_WIND_SPEED_BINS"     : int,
-                       # "NB_WIND_DIRECTION_BINS" : int,
+        parameters = { "WIND_DATA"              : self.__getWindData,             # returns dict of pandas dataFrames
                        "TI"                     : float,
                        "ZONE"                   : self.__getZone,                 # returns shapefile.Reader
+                       "BUDGET"                 : float,
                        "OBJECTIVE_FUNCTION"     : self.__getObjectiveFunction,    # returns string 
-                       # "INTERPOLATION_METHOD"   : self.__getInterpolationMethod,  # returns string
                        "ELEVATION_FUNCTION"     : self.__getElevationFunction,    # returns python function object
-                       # "WAKE_DISTANCE"          : self.__getWakeDistance,         # returns class
                        "WIND_TURBINES"          : self.__getWindTurbines,         # returns dict with data
-                       # "NB_WIND_TURBINES"       : int,
-                       # "WAKE_DEFICIT_MODEL"     : self.__getWakeDeficitModel,     # returns class
-                       # "ROTOR_AVG_MODEL"        : self.__getRotorAvgModel,        # returns class  
-                       # "SUPERPOSITION_MODEL"    : self.__getSuperpositionModel,   # returns class  
-                       # "BLOCKAGE_DEFICIT_MODEL" : self.__getBlockageDeficitModel, # returns class  
-                       # "BLOCKAGE_SUPERP_MODEL"  : self.__getBlockageSuperpModel,  # returns class
-                       # "DEFLECTION_MODEL"       : self.__getDeflectionModel,      # returns class  
-                       # "TURBULENCE_MODEL"       : self.__getTurbulenceModel,      # returns class  
-                       # "CONVERGENCE_TOLERANCE"  : float,
                        "SCALE_FACTOR"           : float
                      }
         
         # Initialising optional parameters with default values
         raw_data = {
-            # "NB_WIND_SPEED_BINS"     : 41,
-            # "NB_WIND_DIRECTION_BINS" : 36,
-            "TI"                     : 0.1,
-            # "INTERPOLATION_METHOD"   : 'linear',
-            "ELEVATION_FUNCTION"     : lambda x, y: 0, # no elevation
-            # "WAKE_DISTANCE"          : None,
-            # "WAKE_DEFICIT_MODEL"     : BastankhahGaussianDeficit,
-            # "ROTOR_AVG_MODEL"        : None,
-            # "SUPERPOSITION_MODEL"    : LinearSum,
-            # "BLOCKAGE_DEFICIT_MODEL" : None,
-            # "BLOCKAGE_SUPERP_MODEL"  : LinearSum,
-            # "DEFLECTION_MODEL"       : None,
-            # "TURBULENCE_MODEL"       : None,
-            # "CONVERGENCE_TOLERANCE"  : 1e-6,
-            "SCALE_FACTOR"           : 1
+            "TI"                 : 0.1,
+            "ELEVATION_FUNCTION" : lambda x, y: 0, # no elevation
+            "SCALE_FACTOR"       : 1,
+            "BUDGET"             : None         
         }
 
         # Read every line of the param file and set the data from it
@@ -195,6 +173,8 @@ class WindFarmData:
 
         self.wind_turbines = WindTurbines(names, diameters, hub_heights, powerct_curves)
 
+        self.wind_turbines_models = [index - 1 for index in raw_data['WIND_TURBINES']['indices']] # We will use this as list indices, so starting at 0 is necessary
+
         #-------------------#
         #- Physical models -#
         #-------------------#
@@ -264,7 +244,13 @@ class WindFarmData:
 
         self.elevation_function = raw_data['ELEVATION_FUNCTION']
         
+
+        #---------------------------#
+        #- Obj function and budget -#
+        #---------------------------#
+
         self.obj_function = raw_data['OBJECTIVE_FUNCTION']
+        self.budget = raw_data['BUDGET']
 
 
     #-------------------#
@@ -359,7 +345,7 @@ class WindFarmData:
                 else:
                     ct_values.append(val)
             wt_data['powerct_curves'].append(PowerCtTabular(wind_speed_values, power_values, 'kW', ct_values))
-        
+        wt_data['indices'] = wind_turbines_indices
         return wt_data
 
     

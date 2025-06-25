@@ -1,7 +1,7 @@
 #argparsing.py
 import argparse
 
-def create_parser(run_function, windrose_function, show_terrain_function, server_start_function, server_stop_function):
+def create_parser(run_f, windrose_f, show_terrain_f, show_turbine_f, server_start_f, server_stop_f):
     parser = argparse.ArgumentParser(description="AMON, a Wind Farm Blackbox\nUse AMON_HOME in filepaths to refer to {AMON_HOME}")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -12,14 +12,14 @@ def create_parser(run_function, windrose_function, show_terrain_function, server
     parser_run.add_argument("-s", action='store_true', help="Send requests to the server instead of directly running")
     parser_run.add_argument("--port", metavar="PORT", help="Port number")
     parser_run.add_argument("--debug", action='store_true', help='Show full error messages')
-    parser_run.set_defaults(func=run_function)
+    parser_run.set_defaults(func=run_f)
 
     # Subcommand: windrose (to show the windrose of wind_data_n folder)
     parser_windrose = subparsers.add_parser("show-windrose", help="Display windrose plot")
     parser_windrose.add_argument("wind_data_id", type=int, metavar="WIND_DATA_ID", help="Id of wind data")
     parser_windrose.add_argument("--save", metavar="FIGURE_PATH_PNG", help="Save figure(png) to provided path") 
     parser_windrose.add_argument("--debug", action='store_true', help='Show full error messages')
-    parser_windrose.set_defaults(func=windrose_function)
+    parser_windrose.set_defaults(func=windrose_f)
 
     # Subcommand: show-terrain (to show zone_n, optionally with a given point)
     parser_terrain = subparsers.add_parser("show-terrain", help="Display terrain")
@@ -29,18 +29,25 @@ def create_parser(run_function, windrose_function, show_terrain_function, server
     parser_terrain.add_argument("--no-grid", action='store_true', help="Remove grid from figure")
     parser_terrain.add_argument("--scale-factor", type=float, metavar="SCALE_FACTOR", help="Factor by which to multiply the size of the terrain")
     parser_terrain.add_argument("--debug", action='store_true', help='Show full error messages')
-    parser_terrain.set_defaults(func=show_terrain_function)
+    parser_terrain.set_defaults(func=show_terrain_f)
+
+    # Subcommand: show-turbine (to show the powerct curve and properties of turbine n)
+    parser_turbine = subparsers.add_parser("show-turbine", help="Display power/ct curve of turbine")
+    parser_turbine.add_argument("turbine_id", type=int, metavar="TURBINE_ID", help="Id of the turbine")
+    parser_turbine.add_argument("--save", metavar="FIGURE_PATH_PNG", help="Save figure (png) to provided path")
+    parser_turbine.add_argument("--debug", action='store_true', help='Show full error messages')
+    parser_turbine.set_defaults(func=show_turbine_f)
 
     # Subcommand: start server
     parser_server = subparsers.add_parser("serve", help="Start server")
     parser_server.add_argument("--port", type=int, metavar="PORT", help="Port number")
     parser_server.add_argument("--debug", action='store_true', help='Show full error messages')
-    parser_server.set_defaults(func=server_start_function)
+    parser_server.set_defaults(func=server_start_f)
 
     #Subcommand : stop server
     parser_server = subparsers.add_parser("shutdown", help="Stop server")
     parser_server.add_argument("--port", type=int, metavar="PORT", help="Port number")
     parser_server.add_argument("--debug", action='store_true', help='Show full error messages')
-    parser_server.set_defaults(func=server_stop_function)
+    parser_server.set_defaults(func=server_stop_f)
 
     return parser

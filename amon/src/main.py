@@ -6,7 +6,7 @@ import sys
 
 
 def main():
-    parser = create_parser(_runBB, _showWindrose, _showTerrain, _runServer, _shutdownServer)
+    parser = create_parser(_runBB, _showWindrose, _showTerrain, _showTurbine, _runServer, _shutdownServer)
     args = parser.parse_args()
     if not args.debug:
         sys.excepthook = simple_excepthook
@@ -65,6 +65,10 @@ def _showTerrain(args):
     '''
     from amon.src.plot_functions import showTerrain
     showTerrain(args)
+
+def _showTurbine(args):
+    from amon.src.plot_functions import showTurbine
+    showTurbine(args)
 
 def _runServer(args):
     args.port = args.port if args.port is not None else DEFAULT_PORT

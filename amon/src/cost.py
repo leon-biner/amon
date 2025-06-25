@@ -4,48 +4,36 @@ V80_COST         = { 'price'       : 100,
                      'parts'       : [100, 100, 100, 100, 100],
                      'life_exp'    : [10, 10, 10, 10, 10],
                      'install'     : 10,
-                     'h_reduction' : 1,
-                     'cut'         : 1,
                      'h_augment'   : 3 }
 
 OPEN_WIND_COST   = { 'price'       : 500,
                      'parts'       : [100, 100, 100, 100, 100],
                      'life_exp'    : [10, 10, 10, 10, 10],
                      'install'     : 10,
-                     'h_reduction' : 1,
-                     'cut'         : 1,
                      'h_augment'   : 3 }
 
 IEA_22MW_COST    = { 'price'       : 100,
                      'parts'       : [100, 100, 100, 100, 100],
                      'life_exp'    : [10, 10, 10, 10, 10],
                      'install'     : 10,
-                     'h_reduction' : 1,
-                     'cut'         : 1,
                      'h_augment'   : 3 }
 
 V82_COST         = { 'price'       : 110,
                      'parts'       : [100, 100, 100, 100, 100],
                      'life_exp'    : [10, 10, 10, 10, 10],
                      'install'     : 10,
-                     'h_reduction' : 1,
-                     'cut'         : 1,
                      'h_augment'   : 3 }
 
 BESPOKE_6MW_COST = { 'price'       : 100,
                      'parts'       : [100, 100, 100, 100, 100],
                      'life_exp'    : [10, 10, 10, 10, 10],
                      'install'     : 10,
-                     'h_reduction' : 1,
-                     'cut'         : 1,
                      'h_augment'   : 3 }
 
 IEA_3_4_MW       = { 'price'       : 100,
                      'parts'       : [100, 100, 100, 100, 100],
                      'life_exp'    : [10, 10, 10, 10, 10],
                      'install'     : 10,
-                     'h_reduction' : 1,
-                     'cut'         : 1,
                      'h_augment'   : 3 }
 
 
@@ -68,15 +56,10 @@ def lifetimeCost(chosen_models, heights, default_heights, lifetime): # might be 
         parts_cost       = wt_costs[chosen_model]['parts']
         life_exp         = wt_costs[chosen_model]['life_exp']
         install_cost     = wt_costs[chosen_model]['install']
-        h_reduction_cost = wt_costs[chosen_model]['h_reduction']
-        cut_cost         = wt_costs[chosen_model]['cut']
         h_augment_cost   = wt_costs[chosen_model]['h_augment']
         for part_cost, part_life in zip(parts_cost, life_exp):
             cost += part_cost * lifetime / part_life
         height_added = height - default_height
-        if height_added < 0:
-            cost += cut_cost + h_reduction_cost * -height_added
-        else:
-            cost += h_augment_cost * height_added
+        cost += h_augment_cost * height_added
         cost += price + install_cost
     return cost

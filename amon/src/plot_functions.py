@@ -1,10 +1,12 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import csv
 
 from amon.src.utils import AMON_HOME, getPoint, getPath
 
 
 def showWindrose(args):
+    from windrose import WindroseAxes
     print(f"Showing windrose for wind data {args.wind_data_id}, saving to {args.save}")
 
     wind_data_path = AMON_HOME / 'data' / 'wind_data' / f'wind_data_{args.wind_data_id}'
@@ -13,24 +15,7 @@ def showWindrose(args):
     wind_direction_path = wind_data_path / 'wind_direction.csv'
     save_filepath = getPath(args.save) # Ici, si le path exact n'est pas bon, il renvoie une erreur. Est-ce mieux de créer les dossiers s'ils n'existent pas?
 
-    plotWindRose(f"Wind Rose for Wind Data {args.wind_data_id} (%)", wind_speed_path, wind_direction_path, save_filepath)
-
-
-def showTerrain(args):
-    print(f"Showing terrain {args.zone_id} with point {args.point}, saving to {args.save}, not showing grid : {args.no_grid}, scale factor {args.scale_factor}")
-
-    zone_path = AMON_HOME / 'data' / 'zones' / f'zone_{args.zone_id}'
-
-    boundary_zone_path  = zone_path / 'boundary_zone.shp'
-    exclusion_zone_path = zone_path / 'exclusion_zone.shp'
-    point_filepath = getPath(args.point)
-    save_filepath  = getPath(args.save)
-
-    plotTerrain(f"Terrain {args.zone_id}", boundary_zone_path, exclusion_zone_path, point_filepath, save_filepath, not args.no_grid, args.scale_factor)
-
-
-def plotWindRose(title, wind_speed_path, wind_direction_path, save_filepath=None):
-    from windrose import WindroseAxes
+    title = f"Wind Rose for Wind Data {args.wind_data_id} (%)"
     WS = pd.read_csv(wind_speed_path, index_col=0)
     WD = pd.read_csv(wind_direction_path, index_col=0)
     ax = WindroseAxes.from_ax()
@@ -50,34 +35,46 @@ def plotWindRose(title, wind_speed_path, wind_direction_path, save_filepath=None
     plt.show()
 
 
-
-def plotTerrain(title, boundary_zone_path, exclusion_zone_path, point_filepath=None, save_filepath=None, grid=False, scale_factor=None):
+def showTerrain(args):
     import numpy as np
     import geopandas as gpd
     import shapefile
     import shapely
 
-    print(boundary_zone_path, exclusion_zone_path, point_filepath, scale_factor)
+    print(f"Showing terrain {args.zone_id} with point {args.point}, saving to {args.save}, not showing grid : {args.no_grid}, scale factor {args.scale_factor}")
+
+    zone_path = AMON_HOME / 'data' / 'zones' / f'zone_{args.zone_id}'
+
+    boundary_zone_path  = zone_path / 'boundary_zone.shp'
+    exclusion_zone_path = zone_path / 'exclusion_zone.shp'
+    point_filepath = getPath(args.point)
+    save_filepath  = getPath(args.save)
+
+    title = f"Terrain {args.zone_id}" 
+
     boundary_zone_content = shapefile.Reader(boundary_zone_path)
     exclusion_zone_content = shapefile.Reader(exclusion_zone_path) if exclusion_zone_path.is_file() else None
 
-    if scale_factor == None:
-        scale_factor = 1
+    if args.scale_factor == None:
+        args.scale_factor = 1
 
     boundary_zone          = []
     exclusion_zone         = []
     for shape in boundary_zone_content.shapes():
-        coords = np.array(shape.points).T*scale_factor
+        coords = np.array(shape.points).T*args.scale_factor
         boundary_zone.append(shapely.Polygon(coords.T))
 
     if exclusion_zone_content:
         for shape in exclusion_zone_content.shapes():
-            coords = np.array(shape.points).T*scale_factor
+            coords = np.array(shape.points).T*args.scale_factor
             exclusion_zone.append(shapely.Polygon(coords.T))
         
 
-    # if point_filepath:
-    x, y = getPoint(point_filepath)
+    point = getPoint(point_filepath)
+    if point:
+        x, y = [float(x) for x in point['coords'][0::2]], [float(y) for y in point['coords'][1::2]]
+    else:
+        x, y = None, None
 
     ax = plt.subplots()[1]
     boundary_filled = gpd.GeoSeries(boundary_zone)
@@ -108,7 +105,7 @@ def plotTerrain(title, boundary_zone_path, exclusion_zone_path, point_filepath=N
 
     plt.title(title)
     plt.setp(ax.get_xticklabels(), rotation=30, horizontalalignment='right')
-    if grid:
+    if not args.no_grid:
         # Save current limits
         xlim = ax.get_xlim()
         ylim = ax.get_ylim()
@@ -134,3 +131,42 @@ def plotTerrain(title, boundary_zone_path, exclusion_zone_path, point_filepath=N
         plt.savefig(save_filepath)
     plt.show()
 
+
+def showTurbine(args):
+    turbine_path = AMON_HOME / 'data' / 'wind_turbines' / f'wind_turbine_{args.turbine_id}'
+    save_filepath = getPath(args.save)
+
+    with open(turbine_path / 'powerct_curve.csv', 'r') as f:
+        reader = csv.DictReader(f)
+        power_values, ct_values, windspeed_values = [], [], []
+        for row in reader:
+            windspeed_values.append(float(row['WindSpeed[m/s]']))
+            power_values.append(float(row['Power[MW]']))
+            ct_values.append(float(row['Ct']))
+
+    with open(turbine_path / 'properties.csv', 'r') as f:
+        props = next(csv.DictReader(f))
+    name = props['name']
+    diameter = props['diameter(m)']
+    hub_height = props['hub_height(m)']
+
+
+    fig, ax1 = plt.subplots()
+    ax1.set_xlabel('Wind Speed [m/s]')
+    ax1.set_ylabel('Power [MW]', color='tab:blue')
+    line_1 = ax1.plot(windspeed_values, power_values, label='Power [MW]', color='tab:blue')[0]
+    ax1.tick_params(axis='y', labelcolor='tab:blue')
+
+    ax2 = ax1.twinx()
+    ax2.set_ylabel('Ct', color='orange')
+    line_2 = ax2.plot(windspeed_values, ct_values, label='Ct', color='orange', linestyle='dashdot')[0]
+    ax2.tick_params(axis='y', labelcolor='orange')
+
+    plt.title(f'{name} - Power and Ct vs Wind Speed\nDiameter = {diameter}m, Hub Height = {hub_height}m')
+    fig.tight_layout()
+    plt.grid()
+    fig.legend([line_1, line_2], ['Power [MW]', 'Ct'])
+
+    if save_filepath:
+        plt.savefig(save_filepath)
+    plt.show()

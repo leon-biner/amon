@@ -21,25 +21,28 @@ INSTANCES_PARAM_FILEPATHS = [ AMON_HOME / 'instances' / '1' / 'params.txt',
 # Names of available wind turbines in order
 AVAILABLE_TURBINES_NAMES = ['V80', 'OpenWind', 'IEA_22MW', 'V82', 'Bespoke_6MW', 'IEA_3.4MW']
 
+# Turbines max heights in order
+MAX_TURBINE_HEIGHTS = [100, 100, 187.5, 100, 187.5, 150]
+
 # Reads the point file
 def getPoint(point_filepath):
     if point_filepath is None:
-        return None, None
+        return None
     with open(point_filepath, 'r') as file:
         content = file.read().splitlines()
         point = {}
-        keys = ['coords', 'models', 'heights', 'yaw_angles']
-        point['models'] = None
+        keys = ['coords', 'types', 'heights', 'yaw_angles']
+        point['types'] = None
         point['heights']  = None
-        point['yaw_angles']      = None
+        point['yaw_angles'] = None
         for line in content:
             for key in keys:
                 if line.startswith(key):
                     point[key] = ast.literal_eval(line[len(key):].strip())
         if not point['yaw_angles']:
             point['yaw_angles'] = [0 for _ in range(int(len(point['coords'])/2))]
-        if not point['models']:
-            point['models'] = [0 for _ in range(int(len(point['coords'])/2))]
+        if not point['types']:
+            point['types'] = [0 for _ in range(int(len(point['coords'])/2))]
         return point
 
 # Reads a string and returns the corresponding path
