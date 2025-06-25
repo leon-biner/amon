@@ -7,8 +7,9 @@ setup(
     description='wind farm blackbox',
     packages=setuptools.find_packages(),
     package_data={
-        "amon": ["data/*"],  # or just ["data/*"]
+        "amon": ["data/**/*"],
     },
+    include_package_data=True,
     entry_points={
         'console_scripts' : ['amon=amon.src.main:main']
     },
