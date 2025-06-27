@@ -1,5 +1,7 @@
 # server.py
 from flask import Flask, request
+import threading
+import time
 import os
 
 from amon.src.blackbox import runBB
@@ -16,7 +18,12 @@ def run_blackbox():
 
 @app.route("/shutdown", methods=["POST"])
 def shutdown():
-    os._exit(0)
+    def delay_kill():
+        time.sleep(0.2)
+        os._exit(0)
+
+    threading.Thread(target=delay_kill).start()
+    return '', 200
 
 def runServer(args):
     app.run(port=args.port, debug=False)

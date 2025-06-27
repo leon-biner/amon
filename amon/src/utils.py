@@ -2,7 +2,7 @@
 from pathlib import Path
 import ast
 import sys
-import numpy as np
+import importlib.util
 
 
 # Default port
@@ -13,9 +13,9 @@ AMON_HOME = Path(__file__).parents[1]
 
 # Path to param file for each instance (corresponding index)
 INSTANCES_PARAM_FILEPATHS = [ AMON_HOME / 'instances' / '1' / 'params.txt',
-                              None,
-                              None,
-                              None,
+                              AMON_HOME / 'instances' / '2' / 'params.txt',
+                              AMON_HOME / 'instances' / '3' / 'params.txt',
+                              AMON_HOME / 'instances' / '4' / 'params.txt',
                               AMON_HOME / 'instances' / '5' / 'params.txt' ]
 
 # Names of available wind turbines in order
@@ -72,13 +72,21 @@ def simple_excepthook(exctype, value, tb):
     print(value)
     sys.exit(1)
 
-def plot3D(f, lx, ly, ux, uy):
-    import matplotlib.pyplot as plt
-    x = np.arange(lx, ux, step=(ux-lx)/500)
-    y = np.arange(ly, uy, step=(uy-ly)/500)
-    X, Y = np.meshgrid(x, y)
-    Z = np.array([[f(x, y) for x, y in zip(row_x, row_y)] for row_x, row_y in zip(X, Y)])
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.plot_surface(X, Y, Z)
-    plt.show()
+
+def getFunctionFromFile(filepath):
+    with open(filepath, 'r') as file:
+        file_content = file.read()
+    tree_file_content = ast.parse(file_content, filename=filepath)
+    function_definitions = []
+    for node in tree_file_content.body:
+        if isinstance(node, ast.FunctionDef): #if it's a function definition
+            function_definitions.append(node)
+    function_definitions = [node for node in tree_file_content.body if isinstance(node, ast.FunctionDef)]
+    if len(function_definitions) != 1:
+        raise ValueError(f"\033[91mError\033[0m: elevation_function_{id}.py file must have only one function definition alike f(numbers): return other_number")
+
+    elevation_function_name = function_definitions[0].name
+    spec = importlib.util.spec_from_file_location("elevation_function_module", filepath) # specifications of the file
+    module = importlib.util.module_from_spec(spec) # make empty module
+    spec.loader.exec_module(module) # execute the code and load it into the module object
+    return getattr(module, elevation_function_name) # select the part with elevation_function_name

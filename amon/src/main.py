@@ -6,7 +6,7 @@ import sys
 
 
 def main():
-    parser = create_parser(_runBB, _showWindrose, _showTerrain, _showTurbine, _runServer, _shutdownServer)
+    parser = create_parser(_runBB, _showWindrose, _showZone, _showTurbine, _showElevation, _runServer, _shutdownServer)
     args = parser.parse_args()
     if not args.debug:
         sys.excepthook = simple_excepthook
@@ -36,23 +36,27 @@ def _runBB(args):
 
 def _showWindrose(args):
     if args.save:
-        args.save = str(getPath(args.instance_or_param_file))
+        args.save = str(getPath(args.save))
     print("Showing windrose...")
     from amon.src.plot_functions import showWindrose
     showWindrose(args)
 
-def _showTerrain(args):
+def _showZone(args):
     if args.point:
         args.point = str(getPath(args.point))
     if args.save:
-        args.save = str(getPath(args.point))
-    print("Showing terrain...")
-    from amon.src.plot_functions import showTerrain
-    showTerrain(args)
+        args.save = str(getPath(args.save))
+    print("Showing zone...")
+    from amon.src.plot_functions import showZone
+    showZone(args)
 
 def _showTurbine(args):
     from amon.src.plot_functions import showTurbine
     showTurbine(args)
+
+def _showElevation(args):
+    from amon.src.plot_functions import showElevation
+    showElevation(args)
 
 def _runServer(args):
     args.port = args.port if args.port is not None else DEFAULT_PORT

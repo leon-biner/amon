@@ -38,13 +38,18 @@ def runBB(args):
     point = getPoint(point_filepath)
     x, y = [float(x) for x in point['coords'][0::2]], [float(y) for y in point['coords'][1::2]]
     types = point['types']
-    models = [windfarm_data.wind_turbines_models[i] for i in types]
+    models = []
+    for i in types:
+        try:
+            models.append(windfarm_data.wind_turbines_models[i])
+        except IndexError:
+            raise ValueError(f"\033[91mError\033[0m: Only {len(windfarm_data.wind_turbines_models)} turbines available, specified {i + 1} or more")
     
     diameters = [windfarm_data.wind_turbines.diameter(i) for i in types]
     elevation_function = windfarm_data.elevation_function
     default_heights = [windfarm_data.wind_turbines.hub_height(type_) for type_ in types]
     heights = point['heights'] if point['heights'] is not None else default_heights # Actual height of the turbine
-    absolute_heights = [] # Height with respect to the terrain's origin
+    absolute_heights = [] # Height with respect to the zone's origin
     if heights is None:
         for x_i, y_i, default_height in zip(x, y, default_heights): # If height not specified, the model's default height is used
             absolute_heights.append(default_height + elevation_function(x_i, y_i))
