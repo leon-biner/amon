@@ -3,7 +3,7 @@ import argparse
 
 from amon.src.utils import AMON_HOME
 
-def create_parser(run_f, windrose_f, show_zone_f, show_turbine_f, show_elevation_f, start_server_f, shutdown_server_f):
+def create_parser(run_f, windrose_f, show_zone_f, show_turbine_f, show_elevation_f, instance_info_f, start_server_f, shutdown_server_f):
     parser = argparse.ArgumentParser(description=f"AMON, a Wind Farm Blackbox. Use \033[94mAMON_HOME\033[0m in filepaths to refer to: {AMON_HOME}")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -47,6 +47,12 @@ def create_parser(run_f, windrose_f, show_zone_f, show_turbine_f, show_elevation
     parser_elevation.add_argument("--save", metavar="FIGURE_PATH_PNG", help="Save figure (png) to provided path")
     parser_elevation.add_argument("--debug", action='store_true', help='Show full error messages')
     parser_elevation.set_defaults(func=show_elevation_f)
+
+    # Command: instance-info (show details about an instance)
+    parser_instance = subparsers.add_parser("instance-info", help="\033[94mShow information about an instance\033[0m")
+    parser_instance.add_argument("instance_id", type=int, metavar='INSTANCE', help="\033[94mInstance id\033[0m")
+    parser_instance.add_argument("--debug", action='store_true', help='Show full error messages')
+    parser_instance.set_defaults(func=instance_info_f)
 
     # Command: start server
     parser_server = subparsers.add_parser("serve", help="\033[94mStart server\033[0m")

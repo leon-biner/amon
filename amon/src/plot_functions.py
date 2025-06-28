@@ -156,6 +156,7 @@ def showTurbine(args):
     ax1.set_ylabel('Power [MW]', color='tab:blue')
     line_1 = ax1.plot(windspeed_values, power_values, label='Power [MW]', color='tab:blue')[0]
     ax1.tick_params(axis='y', labelcolor='tab:blue')
+    plt.grid()
 
     ax2 = ax1.twinx()
     ax2.set_ylabel('Ct', color='orange')
@@ -164,7 +165,6 @@ def showTurbine(args):
 
     plt.title(f'{name} - Power and Ct vs Wind Speed\nDiameter = {diameter}m, Hub Height = {hub_height}m')
     fig.tight_layout()
-    plt.grid()
     fig.legend([line_1, line_2], ['Power [MW]', 'Ct'])
 
     if save_filepath:

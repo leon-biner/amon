@@ -11,6 +11,8 @@ from amon.src.windfarm_data import WindFarmData
 
 # NOTE : The distinction between types and models is as follows : type is the index of the chosen model in the param file specified models, and model is the index of the model in the available models
 #        Example : there are models 1, 3, 4 in the param file, the type 3 is the model 4.
+
+# @brief : 
 def runBB(args): 
     param_filepath = Path(args.instance_or_param_file)
 
@@ -31,7 +33,7 @@ def runBB(args):
     budget     = windfarm_data.budget
     bbo_fields = windfarm_data.bbo
 
-    blackbox = Blackbox(windfarm, buildable_zone, 20, 100, budget)
+    blackbox = Blackbox(windfarm, buildable_zone, lifetime=240, sale_price=75.900, budget=budget)
 
     # Get the point to evaluate
     point_filepath = getPath(args.point, includes_file=True)
@@ -67,10 +69,10 @@ def runBB(args):
 
     # Get the right objective function
     if windfarm_data.obj_function.lower() == 'aep':
-        OBJ = aep
+        OBJ = -aep
     elif windfarm_data.obj_function.lower() == 'roi':
         roi = blackbox.ROI(models, heights, default_heights)
-        OBJ = roi
+        OBJ = -roi
     else:
         lcoe = blackbox.LCOE(models, heights, default_heights)
         OBJ = lcoe
@@ -91,10 +93,10 @@ class Blackbox:
         self.wind_farm      = wind_farm
         self.buildable_zone = buildable_zone
         self.lifetime       = lifetime
-        self.sale_price     = sale_price # per MW
+        self.sale_price     = sale_price # per GWh
         self.budget         = budget
     
-    def AEP(self, x, y, ws, wd, types, heights, yaw_angles):
+    def AEP(self, x, y, ws, wd, types, heights, yaw_angles): # returns in GW
         self.aep = float(self.wind_farm(x, y, ws=ws, wd=wd, type=types, time=True, n_cpu=None, h=heights, yaw=yaw_angles).aep().sum())
         return self.aep
 

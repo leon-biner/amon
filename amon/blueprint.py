@@ -132,6 +132,8 @@ At any point, adding -h to the command will pull up a help menu for more detail.
     "show-windrose"  : plot the windrose of a certain wind data folder
     "show-zone"      : plot a certain zone, optionaly with a point to plot. Good to determine a starting point
     "show-elevation" : plot the elevation function used
+    "show-turbine"   : plot the power/ct curve and display information of turbine n
+    "instance-info"  : show the information about a specific instance
     "serve"          : start a local server that handles requests. This prevents reimporting all the libraries at every iteration.
                        Use -s when running the blackbox to send requests to the server for it to make the calculations instead of doing them from the current session
     "shutdown"       : shuts down the server
@@ -205,4 +207,15 @@ Other files :
     SCALE_FACTOR            <float value>
     --------------------------------------------------------------------
     Note : the ones with (*) are mandatory, others are optional
+'''
+
+
+#---------#
+#- Units -#
+#---------#
+'''
+    The units, if not specified, are as follow :
+        - Energy : GWh
+        - Money  : $1000
+        - Time   : Months
 '''

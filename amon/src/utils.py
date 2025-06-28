@@ -90,3 +90,15 @@ def getFunctionFromFile(filepath):
     module = importlib.util.module_from_spec(spec) # make empty module
     spec.loader.exec_module(module) # execute the code and load it into the module object
     return getattr(module, elevation_function_name) # select the part with elevation_function_name
+
+
+# This function is used to display te info of every instance
+def getInstanceInfo(instance):
+    if instance > len(INSTANCES_PARAM_FILEPATHS):
+        raise ValueError(f"\033[91mError\033[0m: Instance {instance} does not exist, choose from 1 to {len(INSTANCES_PARAM_FILEPATHS)}")
+    nb_turbines_instances = [30, 30, 30, 30, 30]
+    info = f"NB_TURBINES        {nb_turbines_instances[instance-1]}\n"
+    with open(INSTANCES_PARAM_FILEPATHS[instance - 1], 'r') as param_file:
+        info += param_file.read()
+    return info
+    

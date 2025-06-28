@@ -1,12 +1,11 @@
 # main.py
-import time
 from amon.src.argparsing import create_parser
-from amon.src.utils import DEFAULT_PORT, INSTANCES_PARAM_FILEPATHS, getPath, simple_excepthook
+from amon.src.utils import DEFAULT_PORT, INSTANCES_PARAM_FILEPATHS, getInstanceInfo,  getPath, simple_excepthook
 import sys
 
 
 def main():
-    parser = create_parser(_runBB, _showWindrose, _showZone, _showTurbine, _showElevation, _runServer, _shutdownServer)
+    parser = create_parser(_runBB, _showWindrose, _showZone, _showTurbine, _showElevation, _instanceInfo, _runServer, _shutdownServer)
     args = parser.parse_args()
     if not args.debug:
         sys.excepthook = simple_excepthook
@@ -21,6 +20,8 @@ def _runBB(args):
     except (ValueError, TypeError):
         args.instance_or_param_file = str(getPath(args.instance_or_param_file)) # we have to convert to string to send request
     else:
+        if args.instance_or_param_file > len(INSTANCES_PARAM_FILEPATHS):
+            raise ValueError(f"\033[91mError\033[0m: Instance {args.instance_or_param_file} does not exist, choose from 1 to {len(INSTANCES_PARAM_FILEPATHS)}")
         args.instance_or_param_file = str(INSTANCES_PARAM_FILEPATHS[args.instance_or_param_file - 1])
 
     args.point = str(getPath(args.point))
@@ -57,6 +58,9 @@ def _showTurbine(args):
 def _showElevation(args):
     from amon.src.plot_functions import showElevation
     showElevation(args)
+
+def _instanceInfo(args):
+    print(getInstanceInfo(args.instance_id))
 
 def _runServer(args):
     args.port = args.port if args.port is not None else DEFAULT_PORT
