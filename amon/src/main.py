@@ -26,7 +26,7 @@ def _runBB(args):
 
     args.point = str(getPath(args.point))
     print("Running Blackbox ", end='')
-    if args.s:
+    if args.r:
         print("from server...")
         from amon.src.client import runBBRequest
         print(runBBRequest(args))

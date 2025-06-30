@@ -4,10 +4,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import weibull_min
 
+import amon.src.utils as utils
+
 # The baseline for all other turbines is the V80, which is the most average turbine of the time of the data used in the study
 # For this first version, I will linearly ajust the price of the parts and of the other turbines according to their maximum power output compared to the V80's
-
-rng = np.random.default_rng(None)
 
 v80_parts_costs    = { 'rotor'        : 162,
                        'main_bearing' : 110,
@@ -95,7 +95,7 @@ def lifetimeCost(chosen_models, heights, default_heights, lifetime):
     return cost
 
 def getNbReplacements(lifetime, details=None):
-    time.sleep(1.5)
+    rng = np.random.default_rng(utils.SEED)
     nb_replacements = {}
     for part_name in beta:
         k = beta[part_name]
@@ -137,5 +137,5 @@ def plotWeibullPdfs(lifetime):
     plt.show()
 
 if __name__ == '__main__':
-    getNbReplacements(240)
-    # plotWeibullPdfs(240)
+    getNbReplacements(240, details=True)
+    plotWeibullPdfs(240)

@@ -11,6 +11,12 @@ DEFAULT_PORT = 8765
 # Path to home directory
 AMON_HOME = Path(__file__).parents[1]
 
+# Random seed
+SEED = None
+def setSeed(seed_value):
+    global SEED
+    SEED = seed_value
+
 # Path to param file for each instance (corresponding index)
 INSTANCES_PARAM_FILEPATHS = [ AMON_HOME / 'instances' / '1' / 'params.txt',
                               AMON_HOME / 'instances' / '2' / 'params.txt',

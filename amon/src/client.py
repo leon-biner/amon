@@ -7,7 +7,8 @@ def runBBRequest(args):
             f"http://localhost:{args.port}/run",
             json={
                 "instance_or_param_file" : args.instance_or_param_file,
-                "point"                  : args.point
+                "point"                  : args.point,
+                "s"                      : args.s
             }
         )
     except requests.exceptions.ConnectionError:

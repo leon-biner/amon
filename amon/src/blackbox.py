@@ -4,8 +4,8 @@ from pathlib import Path
 
 from py_wake.wind_farm_models.engineering_models import All2AllIterative
 
+import amon.src.utils as utils
 from amon.src.cost import lifetimeCost
-from amon.src.utils import getPoint, getPath, MAX_TURBINE_HEIGHTS
 from amon.src.windfarm_data import WindFarmData
 
 
@@ -14,6 +14,7 @@ from amon.src.windfarm_data import WindFarmData
 
 # @brief : 
 def runBB(args): 
+    utils.setSeed(args.s)
     param_filepath = Path(args.instance_or_param_file)
 
     # Construct the blackbox
@@ -36,8 +37,8 @@ def runBB(args):
     blackbox = Blackbox(windfarm, buildable_zone, lifetime=240, sale_price=75.900, budget=budget)
 
     # Get the point to evaluate
-    point_filepath = getPath(args.point, includes_file=True)
-    point = getPoint(point_filepath)
+    point_filepath = utils.getPath(args.point, includes_file=True)
+    point = utils.getPoint(point_filepath)
     x, y = [float(x) for x in point['coords'][0::2]], [float(y) for y in point['coords'][1::2]]
     types = point['types']
     models = []
@@ -62,22 +63,17 @@ def runBB(args):
 
     if not (len(x) == len(y) == len(types) == len(absolute_heights) == len(yaw_angles)):
         raise ValueError("\033[91mError\033[0m: All fields of evaluated point must have the same dimensions")
-    # Calculate constraints
-    # aep = blackbox.AEP(x, y, ws=windfarm_data.WS_BB, wd=windfarm_data.WD_BB, types=types, heights=absolute_heights, yaw_angles=yaw_angles)
-    aep = 1
+    # Calculate constraints and annual energy production
+    aep = blackbox.AEP(x, y, ws=windfarm_data.WS_BB, wd=windfarm_data.WD_BB, types=types, heights=absolute_heights, yaw_angles=yaw_angles)
     constraints = blackbox.constraints(x, y, models, diameters, heights, default_heights)
 
     # Get the right objective function
     if windfarm_data.obj_function.lower() == 'aep':
         OBJ = -aep
     elif windfarm_data.obj_function.lower() == 'roi':
-        #roi = blackbox.ROI(models, heights, default_heights)
-        roi = 1
-        OBJ = -roi
+        OBJ = -blackbox.ROI(models, heights, default_heights)
     else:
-        # lcoe = blackbox.LCOE(models, heights, default_heights)
-        lcoe = 1
-        OBJ = lcoe
+        OBJ = blackbox.LCOE(models, heights, default_heights)
 
     # Set the blackbox output
     bbo = ''
@@ -131,7 +127,7 @@ class Blackbox:
         sum_dist_buildable_zone = sum(distances)
 
         # Height constraints
-        max_heights = [MAX_TURBINE_HEIGHTS[i] for i in chosen_models]
+        max_heights = [utils.MAX_TURBINE_HEIGHTS[i] for i in chosen_models]
         min_heights = [diameter / 2 for diameter in diameters]
         sum_excess_height = 0
         for height, max_height, min_height in zip(heights, max_heights, min_heights):
