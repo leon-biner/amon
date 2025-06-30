@@ -62,19 +62,21 @@ def runBB(args):
 
     if not (len(x) == len(y) == len(types) == len(absolute_heights) == len(yaw_angles)):
         raise ValueError("\033[91mError\033[0m: All fields of evaluated point must have the same dimensions")
-
     # Calculate constraints
-    aep = blackbox.AEP(x, y, ws=windfarm_data.WS_BB, wd=windfarm_data.WD_BB, types=types, heights=absolute_heights, yaw_angles=yaw_angles)
+    # aep = blackbox.AEP(x, y, ws=windfarm_data.WS_BB, wd=windfarm_data.WD_BB, types=types, heights=absolute_heights, yaw_angles=yaw_angles)
+    aep = 1
     constraints = blackbox.constraints(x, y, models, diameters, heights, default_heights)
 
     # Get the right objective function
     if windfarm_data.obj_function.lower() == 'aep':
         OBJ = -aep
     elif windfarm_data.obj_function.lower() == 'roi':
-        roi = blackbox.ROI(models, heights, default_heights)
+        #roi = blackbox.ROI(models, heights, default_heights)
+        roi = 1
         OBJ = -roi
     else:
-        lcoe = blackbox.LCOE(models, heights, default_heights)
+        # lcoe = blackbox.LCOE(models, heights, default_heights)
+        lcoe = 1
         OBJ = lcoe
 
     # Set the blackbox output
