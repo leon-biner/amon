@@ -11,10 +11,13 @@ app = Flask(__name__)
 
 @app.route("/run", methods=["POST"])
 def run_blackbox():
-    data = request.json
-    args = type("Args", (), data)() # Make object to use same syntax as argparse in runBB
-    result = runBB(args)
-    return result
+    try:
+        data = request.json
+        args = type("Args", (), data)() # Make object to use same syntax as argparse in runBB
+        result = runBB(args)
+        return result
+    except FileNotFoundError as e:
+        return str(e)
 
 @app.route("/shutdown", methods=["POST"])
 def shutdown():

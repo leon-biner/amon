@@ -34,22 +34,25 @@ MAX_TURBINE_HEIGHTS = [100, 100, 187.5, 100, 187.5, 150]
 def getPoint(point_filepath):
     if point_filepath is None:
         return None
-    with open(point_filepath, 'r') as file:
-        content = file.read().splitlines()
-        point = {}
-        keys = ['coords', 'types', 'heights', 'yaw_angles']
-        point['types'] = None
-        point['heights']  = None
-        point['yaw_angles'] = None
-        for line in content:
-            for key in keys:
-                if line.startswith(key):
-                    point[key] = ast.literal_eval(line[len(key):].strip())
-        if not point['yaw_angles']:
-            point['yaw_angles'] = [0 for _ in range(int(len(point['coords'])/2))]
-        if not point['types']:
-            point['types'] = [0 for _ in range(int(len(point['coords'])/2))]
-        return point
+    try:
+        with open(point_filepath, 'r') as file:
+            content = file.read().splitlines()
+    except FileNotFoundError:
+        raise FileNotFoundError(f"\033[91mError\033[0m: Invalid point file at {point_filepath}")
+    point = {}
+    keys = ['coords', 'types', 'heights', 'yaw_angles']
+    point['types'] = None
+    point['heights']  = None
+    point['yaw_angles'] = None
+    for line in content:
+        for key in keys:
+            if line.startswith(key):
+                point[key] = ast.literal_eval(line[len(key):].strip())
+    if not point['yaw_angles']:
+        point['yaw_angles'] = [0 for _ in range(int(len(point['coords'])/2))]
+    if not point['types']:
+        point['types'] = [0 for _ in range(int(len(point['coords'])/2))]
+    return point
 
 # Reads a string and returns the corresponding path
 def getPath(path, includes_file=True):
@@ -102,7 +105,7 @@ def getFunctionFromFile(filepath):
 def getInstanceInfo(instance):
     if instance > len(INSTANCES_PARAM_FILEPATHS):
         raise ValueError(f"\033[91mError\033[0m: Instance {instance} does not exist, choose from 1 to {len(INSTANCES_PARAM_FILEPATHS)}")
-    nb_turbines_instances = [30, 30, 30, 30, 30]
+    nb_turbines_instances = [30, 12, 6, 11, 21]
     info = f"NB_TURBINES        {nb_turbines_instances[instance-1]}\n"
     with open(INSTANCES_PARAM_FILEPATHS[instance - 1], 'r') as param_file:
         info += param_file.read()

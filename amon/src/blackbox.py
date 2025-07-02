@@ -20,15 +20,15 @@ def runBB(args):
     # Construct the blackbox
     windfarm_data = WindFarmData(param_filepath)
 
-    windfarm = All2AllIterative( site                   = windfarm_data.site,
-                                  windTurbines          = windfarm_data.wind_turbines,
-                                  wake_deficitModel     = windfarm_data.wake_deficit_model,
-                                  superpositionModel    = windfarm_data.superposition_model,
-                                  blockage_deficitModel = windfarm_data.blockage_deficit_model,
-                                  deflectionModel       = windfarm_data.deflection_model,
-                                  turbulenceModel       = windfarm_data.turbulence_model,
-                                  rotorAvgModel         = windfarm_data.rotor_avg_model,
-                                  convergence_tolerance = windfarm_data.convergence_tolerance ) 
+    windfarm = All2AllIterative( site                  = windfarm_data.site,
+                                 windTurbines          = windfarm_data.wind_turbines,
+                                 wake_deficitModel     = windfarm_data.wake_deficit_model,
+                                 superpositionModel    = windfarm_data.superposition_model,
+                                 blockage_deficitModel = windfarm_data.blockage_deficit_model,
+                                 deflectionModel       = windfarm_data.deflection_model,
+                                 turbulenceModel       = windfarm_data.turbulence_model,
+                                 rotorAvgModel         = windfarm_data.rotor_avg_model,
+                                 convergence_tolerance = windfarm_data.convergence_tolerance ) 
     buildable_zone = windfarm_data.buildable_zone
 
     budget     = windfarm_data.budget
