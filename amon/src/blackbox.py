@@ -1,6 +1,7 @@
 # blackbox.py
 import shapely
 from pathlib import Path
+import numpy as np
 
 from py_wake.wind_farm_models.engineering_models import All2AllIterative
 
@@ -63,8 +64,15 @@ def runBB(args):
 
     if not (len(x) == len(y) == len(types) == len(absolute_heights) == len(yaw_angles)):
         raise ValueError("\033[91mError\033[0m: All fields of evaluated point must have the same dimensions")
+    # Perturbation of wind data
+    wind_speeds     = []
+    wind_directions = []
+    for ws in windfarm_data.WS_BB:
+        wind_speeds.append(np.random.normal(loc=ws, scale=1))
+    for wd in windfarm_data.WD_BB:
+        wind_directions.append(np.random.normal(loc=wd, scale=14))
     # Calculate constraints and annual energy production
-    aep = blackbox.AEP(x, y, ws=windfarm_data.WS_BB, wd=windfarm_data.WD_BB, types=types, heights=absolute_heights, yaw_angles=yaw_angles)
+    aep = blackbox.AEP(x, y, ws=wind_speeds, wd=wind_directions, types=types, heights=absolute_heights, yaw_angles=yaw_angles)
     constraints = blackbox.constraints(x, y, models, diameters, heights, default_heights)
 
     # Get the right objective function
@@ -95,7 +103,7 @@ class Blackbox:
         self.budget         = budget
     
     def AEP(self, x, y, ws, wd, types, heights, yaw_angles): # returns in GW
-        self.aep = float(self.wind_farm(x, y, ws=ws, wd=wd, type=types, time=True, n_cpu=None, h=heights, yaw=yaw_angles).aep().sum())
+        self.aep = float(self.wind_farm(x, y, ws=ws, wd=wd, type=types, time=True, n_cpu=None, h=heights, yaw=yaw_angles, tilt=0).aep().sum())
         return self.aep
 
     def ROI(self, chosen_models, heights, default_heights):

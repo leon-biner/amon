@@ -302,7 +302,7 @@ class WindFarmData:
         self.rotor_avg_model = None
         self.wake_deficit_model = BastankhahGaussianDeficit(use_effective_ws=True,rotorAvgModel=self.rotor_avg_model)
         self.superposition_model = SafeSquaredSum()
-        self.blockage_deficit_model = VortexCylinder(superpositionModel= self.superposition_model, rotorAvgModel=self.rotor_avg_model, use_effective_ws=True )
+        self.blockage_deficit_model = VortexCylinder(superpositionModel= self.superposition_model, rotorAvgModel=self.rotor_avg_model, use_effective_ws=True)
         self.deflection_model = None
         self.turbulence_model = CrespoHernandez(rotorAvgModel=self.rotor_avg_model)
         self.convergence_tolerance = 1e-6

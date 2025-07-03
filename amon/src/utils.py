@@ -1,5 +1,6 @@
 # utils.py
 from pathlib import Path
+import numpy as np
 import ast
 import sys
 import importlib.util
@@ -16,6 +17,7 @@ SEED = None
 def setSeed(seed_value):
     global SEED
     SEED = seed_value
+    np.random.seed(seed_value)
 
 # Path to param file for each instance (corresponding index)
 INSTANCES_PARAM_FILEPATHS = [ AMON_HOME / 'instances' / '1' / 'params.txt',

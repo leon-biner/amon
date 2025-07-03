@@ -1,0 +1,6 @@
+Difference: 125.310467, Indices: [1, 0, 0, 0, 0, 0], Time: 3.44 s
+Difference: 125.585795, Indices: [3, 0, 0, 0, 0, 0], Time: 10.39 s
+Difference: 125.707621, Indices: [0, 0, 0, 0, 0, 0], Time: 1.96 s
+Difference: 126.199554, Indices: [5, 0, 0, 0, 0, 0], Time: 4.90 s
+Difference: 127.748321, Indices: [4, 0, 0, 0, 0, 0], Time: 11.08 s
+Difference: 127.812718, Indices: [2, 0, 0, 0, 0, 0], Time: 12.58 s
