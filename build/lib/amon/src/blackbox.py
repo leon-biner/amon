@@ -1,50 +1,59 @@
 # blackbox.py
 import shapely
 from pathlib import Path
+import numpy as np
 
 from py_wake.wind_farm_models.engineering_models import All2AllIterative
 
+import amon.src.utils as utils
 from amon.src.cost import lifetimeCost
-from amon.src.utils import getPoint, getPath, MAX_TURBINE_HEIGHTS
 from amon.src.windfarm_data import WindFarmData
 
 
 # NOTE : The distinction between types and models is as follows : type is the index of the chosen model in the param file specified models, and model is the index of the model in the available models
 #        Example : there are models 1, 3, 4 in the param file, the type 3 is the model 4.
+
+# @brief : 
 def runBB(args): 
+    utils.setSeed(args.s)
     param_filepath = Path(args.instance_or_param_file)
 
     # Construct the blackbox
     windfarm_data = WindFarmData(param_filepath)
 
-    windfarm = All2AllIterative( site                   = windfarm_data.site,
-                                  windTurbines          = windfarm_data.wind_turbines,
-                                  wake_deficitModel     = windfarm_data.wake_deficit_model,
-                                  superpositionModel    = windfarm_data.superposition_model,
-                                  blockage_deficitModel = windfarm_data.blockage_deficit_model,
-                                  deflectionModel       = windfarm_data.deflection_model,
-                                  turbulenceModel       = windfarm_data.turbulence_model,
-                                  rotorAvgModel         = windfarm_data.rotor_avg_model,
-                                  convergence_tolerance = windfarm_data.convergence_tolerance ) 
+    windfarm = All2AllIterative( site                  = windfarm_data.site,
+                                 windTurbines          = windfarm_data.wind_turbines,
+                                 wake_deficitModel     = windfarm_data.wake_deficit_model,
+                                 superpositionModel    = windfarm_data.superposition_model,
+                                 blockage_deficitModel = windfarm_data.blockage_deficit_model,
+                                 deflectionModel       = windfarm_data.deflection_model,
+                                 turbulenceModel       = windfarm_data.turbulence_model,
+                                 rotorAvgModel         = windfarm_data.rotor_avg_model,
+                                 convergence_tolerance = windfarm_data.convergence_tolerance ) 
     buildable_zone = windfarm_data.buildable_zone
 
     budget     = windfarm_data.budget
     bbo_fields = windfarm_data.bbo
 
-    blackbox = Blackbox(windfarm, buildable_zone, 20, 100, budget)
+    blackbox = Blackbox(windfarm, buildable_zone, lifetime=240, sale_price=75.900, budget=budget)
 
     # Get the point to evaluate
-    point_filepath = getPath(args.point, includes_file=True)
-    point = getPoint(point_filepath)
+    point_filepath = utils.getPath(args.point, includes_file=True)
+    point = utils.getPoint(point_filepath)
     x, y = [float(x) for x in point['coords'][0::2]], [float(y) for y in point['coords'][1::2]]
     types = point['types']
-    models = [windfarm_data.wind_turbines_models[i] for i in types]
+    models = []
+    for i in types:
+        try:
+            models.append(windfarm_data.wind_turbines_models[i])
+        except IndexError:
+            raise ValueError(f"\033[91mError\033[0m: Only {len(windfarm_data.wind_turbines_models)} turbines available, specified {i + 1} or more")
     
     diameters = [windfarm_data.wind_turbines.diameter(i) for i in types]
     elevation_function = windfarm_data.elevation_function
     default_heights = [windfarm_data.wind_turbines.hub_height(type_) for type_ in types]
     heights = point['heights'] if point['heights'] is not None else default_heights # Actual height of the turbine
-    absolute_heights = [] # Height with respect to the terrain's origin
+    absolute_heights = [] # Height with respect to the zone's origin
     if heights is None:
         for x_i, y_i, default_height in zip(x, y, default_heights): # If height not specified, the model's default height is used
             absolute_heights.append(default_height + elevation_function(x_i, y_i))
@@ -55,20 +64,24 @@ def runBB(args):
 
     if not (len(x) == len(y) == len(types) == len(absolute_heights) == len(yaw_angles)):
         raise ValueError("\033[91mError\033[0m: All fields of evaluated point must have the same dimensions")
-
-    # Calculate constraints
-    aep = blackbox.AEP(x, y, ws=windfarm_data.WS_BB, wd=windfarm_data.WD_BB, types=types, heights=absolute_heights, yaw_angles=yaw_angles)
+    # Perturbation of wind data
+    wind_speeds     = []
+    wind_directions = []
+    for ws in windfarm_data.WS_BB:
+        wind_speeds.append(np.random.normal(loc=ws, scale=1))
+    for wd in windfarm_data.WD_BB:
+        wind_directions.append(np.random.normal(loc=wd, scale=14))
+    # Calculate constraints and annual energy production
+    aep = blackbox.AEP(x, y, ws=wind_speeds, wd=wind_directions, types=types, heights=absolute_heights, yaw_angles=yaw_angles)
     constraints = blackbox.constraints(x, y, models, diameters, heights, default_heights)
 
     # Get the right objective function
     if windfarm_data.obj_function.lower() == 'aep':
-        OBJ = aep
+        OBJ = -aep
     elif windfarm_data.obj_function.lower() == 'roi':
-        roi = blackbox.ROI(models, heights, default_heights)
-        OBJ = roi
+        OBJ = -blackbox.ROI(models, heights, default_heights)
     else:
-        lcoe = blackbox.LCOE(models, heights, default_heights)
-        OBJ = lcoe
+        OBJ = blackbox.LCOE(models, heights, default_heights)
 
     # Set the blackbox output
     bbo = ''
@@ -86,11 +99,11 @@ class Blackbox:
         self.wind_farm      = wind_farm
         self.buildable_zone = buildable_zone
         self.lifetime       = lifetime
-        self.sale_price     = sale_price # per MW
+        self.sale_price     = sale_price # per GWh
         self.budget         = budget
     
-    def AEP(self, x, y, ws, wd, types, heights, yaw_angles):
-        self.aep = float(self.wind_farm(x, y, ws=ws, wd=wd, type=types, time=True, n_cpu=None, h=heights, yaw=yaw_angles).aep().sum())
+    def AEP(self, x, y, ws, wd, types, heights, yaw_angles): # returns in GW
+        self.aep = float(self.wind_farm(x, y, ws=ws, wd=wd, type=types, time=True, n_cpu=None, h=heights, yaw=yaw_angles, tilt=0).aep().sum())
         return self.aep
 
     def ROI(self, chosen_models, heights, default_heights):
@@ -122,7 +135,7 @@ class Blackbox:
         sum_dist_buildable_zone = sum(distances)
 
         # Height constraints
-        max_heights = [MAX_TURBINE_HEIGHTS[i] for i in chosen_models]
+        max_heights = [utils.MAX_TURBINE_HEIGHTS[i] for i in chosen_models]
         min_heights = [diameter / 2 for diameter in diameters]
         sum_excess_height = 0
         for height, max_height, min_height in zip(heights, max_heights, min_heights):

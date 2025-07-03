@@ -79,7 +79,7 @@ def main():
                                 "indices": [i_r, i_s, i_d, i_w, i_b, i_t],
                                 "time": time.time() - start_time
                             })
-                            print(f"Done with [{i_r}, {i_s}, {i_d}, {i_w}, {i_b}, {i_t}] : \033[93mDifference\033[0m = {abs(aep_reff-aep_sim)}")
+                            print(f"Done with [{i_r}, {i_s}, {i_d}, {i_w}, {i_b}, {i_t}] : \033[93mDifference\033[0m = {abs(aep_reff-aep_sim):3.6f}, \033[94mTime\033[0m = {time.time() - start_time:3.6f}")
 
     sorted_differences = sorted(differences, key=lambda d: d["difference"])
     with open("sorted_differences.txt", "w") as f:

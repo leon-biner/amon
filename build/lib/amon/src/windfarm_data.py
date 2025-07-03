@@ -3,8 +3,6 @@ import numpy  as np
 import xarray as xr
 import pandas as pd
 import shapefile
-import ast
-import importlib.util
 import csv
 from py_wake.site import XRSite
 # from py_wake.site.distance import StraightDistance, TerrainFollowingDistance
@@ -18,7 +16,7 @@ from py_wake.turbulence_models import CrespoHernandez
 from py_wake.site.shear import PowerShear
 import shapely
 
-from amon.src.utils import AMON_HOME
+from amon.src.utils import AMON_HOME, getFunctionFromFile
 
 # Prevents negative deficits, which don't make sense physically and break PyWake
 class SafeSquaredSum(SquaredSum):
@@ -29,10 +27,10 @@ class SafeSquaredSum(SquaredSum):
 
 OBJECTIVE_FUNCTIONS = ['AEP', 'ROI', 'LCOE']
 NB_WIND_DATA = 4
-NB_TERRAIN = 5
+NB_ZONES = 5
 
 # ACCEPTED_INTERPOLATION_METHODS   = ['linear', 'nearest', 'cubic']
-REQUIRED_WIND_TURBINE_PROPERTIES = {'name', 'diameter(m)', 'hub_height(m)'}
+REQUIRED_WIND_TURBINE_PROPERTIES = {'name', 'diameter[m]', 'hub_height[m]'}
 ACCEPTED_BBO_VALUES              = {'OBJ', 'PLACING', 'SPACING', 'BUDGET', 'HEIGHT'}
 # ACCEPTED_SUPERPOSITION_MODELS    = { 'SquaredSum' : SafeSquaredSum, 'LinearSum' : LinearSum, 'MaxSum' : MaxSum }
 REQUIRED_POWERCT_CURVE_HEADERS   = {'WindSpeed[m/s]', 'Power[MW]', 'Ct'}
@@ -239,22 +237,7 @@ class WindFarmData:
     def __getElevationFunction(self, id):
         id = self.__cast(id, int, "ELEVATION_FUNCTION")
         data_filepath = AMON_HOME / 'data' / 'elevation_functions' / f'elevation_function_{id}.py'
-        with open(data_filepath, 'r') as file:
-            file_content = file.read()
-        tree_file_content = ast.parse(file_content, filename=data_filepath)
-        function_definitions = []
-        for node in tree_file_content.body:
-            if isinstance(node, ast.FunctionDef): #if it's a function definition
-                function_definitions.append(node)
-        function_definitions = [node for node in tree_file_content.body if isinstance(node, ast.FunctionDef)]
-        if len(function_definitions) != 1:
-            raise ValueError(f"\033[91mError\033[0m: elevation_function_{id}.py file must have only one function definition alike f(numbers): return other_number")
-
-        elevation_function_name = function_definitions[0].name
-        spec = importlib.util.spec_from_file_location("elevation_function_module", data_filepath) # specifications of the file
-        module = importlib.util.module_from_spec(spec) # make empty module
-        spec.loader.exec_module(module) # execute the code and load it into the module object
-        return getattr(module, elevation_function_name) # select the part with elevation_function_name
+        return getFunctionFromFile(data_filepath)
 
     def __getWindTurbines(self, wind_turbines_indices):
         wt_data = { 'names' : [], 'diameters' : [], 'hub_heights' : [], 'powerct_curves' : []}
@@ -270,8 +253,8 @@ class WindFarmData:
                 if not REQUIRED_WIND_TURBINE_PROPERTIES.issubset(properties):
                     raise ValueError(f"\033[91mError\033[0m: csv header must include {REQUIRED_WIND_TURBINE_PROPERTIES}")
             wt_data['names'].append(properties['name'])
-            wt_data['diameters'].append(int(properties['diameter(m)']))
-            wt_data['hub_heights'].append(int(properties['hub_height(m)']))
+            wt_data['diameters'].append(int(properties['diameter[m]']))
+            wt_data['hub_heights'].append(int(properties['hub_height[m]']))
 
             # dealing with the powerct curve
             powerct_curve_file_data = pd.read_csv(data_folder_path / 'powerct_curve.csv')
@@ -319,7 +302,7 @@ class WindFarmData:
         self.rotor_avg_model = None
         self.wake_deficit_model = BastankhahGaussianDeficit(use_effective_ws=True,rotorAvgModel=self.rotor_avg_model)
         self.superposition_model = SafeSquaredSum()
-        self.blockage_deficit_model = VortexCylinder(superpositionModel= self.superposition_model, rotorAvgModel=self.rotor_avg_model, use_effective_ws=True )
+        self.blockage_deficit_model = VortexCylinder(superpositionModel= self.superposition_model, rotorAvgModel=self.rotor_avg_model, use_effective_ws=True)
         self.deflection_model = None
         self.turbulence_model = CrespoHernandez(rotorAvgModel=self.rotor_avg_model)
         self.convergence_tolerance = 1e-6

@@ -1,15 +1,17 @@
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import csv
 
-from amon.src.utils import AMON_HOME, getPoint, getPath
+from amon.src.utils import AMON_HOME, getPoint, getPath, getFunctionFromFile
 
 
 def showWindrose(args):
     from windrose import WindroseAxes
-    print(f"Showing windrose for wind data {args.wind_data_id}, saving to {args.save}")
-
     wind_data_path = AMON_HOME / 'data' / 'wind_data' / f'wind_data_{args.wind_data_id}'
+    
+    if not wind_data_path.exists():
+        raise ValueError(f"\033[91mError\033[0m: Windrose {args.wind_data_id} does not exist")
 
     wind_speed_path     = wind_data_path / 'wind_speed.csv'
     wind_direction_path = wind_data_path / 'wind_direction.csv'
@@ -35,22 +37,22 @@ def showWindrose(args):
     plt.show()
 
 
-def showTerrain(args):
-    import numpy as np
+def showZone(args):
     import geopandas as gpd
     import shapefile
     import shapely
 
-    print(f"Showing terrain {args.zone_id} with point {args.point}, saving to {args.save}, not showing grid : {args.no_grid}, scale factor {args.scale_factor}")
-
     zone_path = AMON_HOME / 'data' / 'zones' / f'zone_{args.zone_id}'
+    
+    if not zone_path.exists():
+        raise ValueError(f"\033[91mError\033[0m: Zone {args.zone_id} does not exist")
 
     boundary_zone_path  = zone_path / 'boundary_zone.shp'
     exclusion_zone_path = zone_path / 'exclusion_zone.shp'
     point_filepath = getPath(args.point)
     save_filepath  = getPath(args.save)
 
-    title = f"Terrain {args.zone_id}" 
+    title = f"Zone {args.zone_id}" 
 
     boundary_zone_content = shapefile.Reader(boundary_zone_path)
     exclusion_zone_content = shapefile.Reader(exclusion_zone_path) if exclusion_zone_path.is_file() else None
@@ -119,8 +121,8 @@ def showTerrain(args):
         ax.set_xlim(xlim)
         ax.set_ylim(ylim)
 
-    plt.xlabel("x (m)")
-    plt.ylabel("y (m)")
+    plt.xlabel("x [m]")
+    plt.ylabel("y [m]")
     if point_filepath:
         ax.legend(loc='lower left')
     if save_filepath:
@@ -130,6 +132,8 @@ def showTerrain(args):
 
 def showTurbine(args):
     turbine_path = AMON_HOME / 'data' / 'wind_turbines' / f'wind_turbine_{args.turbine_id}'
+    if not turbine_path.exists():
+        raise ValueError(f"\033[91mError\033[0m: Turbine {args.turbine_id} does not exist")
     save_filepath = getPath(args.save)
 
     with open(turbine_path / 'powerct_curve.csv', 'r') as f:
@@ -143,8 +147,8 @@ def showTurbine(args):
     with open(turbine_path / 'properties.csv', 'r') as f:
         props = next(csv.DictReader(f))
     name = props['name']
-    diameter = props['diameter(m)']
-    hub_height = props['hub_height(m)']
+    diameter = props['diameter[m]']
+    hub_height = props['hub_height[m]']
 
 
     fig, ax1 = plt.subplots()
@@ -152,6 +156,7 @@ def showTurbine(args):
     ax1.set_ylabel('Power [MW]', color='tab:blue')
     line_1 = ax1.plot(windspeed_values, power_values, label='Power [MW]', color='tab:blue')[0]
     ax1.tick_params(axis='y', labelcolor='tab:blue')
+    plt.grid()
 
     ax2 = ax1.twinx()
     ax2.set_ylabel('Ct', color='orange')
@@ -160,9 +165,31 @@ def showTurbine(args):
 
     plt.title(f'{name} - Power and Ct vs Wind Speed\nDiameter = {diameter}m, Hub Height = {hub_height}m')
     fig.tight_layout()
-    plt.grid()
     fig.legend([line_1, line_2], ['Power [MW]', 'Ct'])
 
     if save_filepath:
         plt.savefig(save_filepath)
+    plt.show()
+
+def showElevation(args):
+    data_filepath = AMON_HOME / 'data' / 'elevation_functions' / f'elevation_function_{args.function_id}.py'
+    if not data_filepath.exists():
+        raise ValueError(f"\033[91mError\033[0m: Elevation function {args.function_id} does not exist")
+    elevation_function = getFunctionFromFile(data_filepath)
+
+    if args.limits is not None:
+        [lx, ly, ux, uy] = args.limits
+    else:
+        [lx, ly, ux, uy] = [-1000, -1000, 1000, 1000]
+    x = np.arange(lx, ux, step=(ux-lx)/500)
+    y = np.arange(ly, uy, step=(uy-ly)/500)
+    X, Y = np.meshgrid(x, y)
+    Z = np.array([[elevation_function(x, y) for x, y in zip(row_x, row_y)] for row_x, row_y in zip(X, Y)])
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.set_xlabel("X [m]")
+    ax.set_ylabel("Y [m]")
+    ax.set_zlabel("Elevation [m]")
+    ax.plot_surface(X, Y, Z)
+    plt.title(f"Elevation function {args.function_id}")
     plt.show()

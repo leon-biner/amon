@@ -47,7 +47,7 @@ All2AllIterative object  (see https://gitlab.windenergy.dtu.dk/TOPFARM/PyWake/-/
     -----------
             The site object stores the probability of each (wind_speed, wind_direction) combo, 
         the turbulence intensity the wind shear (change of wind speed with height function),
-        the elevation of the terrain for x, y, the interpolation method used by scipy (used if the
+        the elevation of the zone for x, y, the interpolation method used by scipy (used if the
         point explored is not in the data provided, it interpolates to find the wind speed and
         wing direction at that poiny)
 
@@ -119,7 +119,7 @@ The height constraint depends on the model of wind turbine used.
 How are the parameters chosen ?
 -------------------------------
     The wind data (windrose), the zone, the objective function and the wind turbine models all need to be specified in a parameters file.
-Optionaly, one can specify a scale factor for the size of the terrain, an elevation function to add a vertical aspect, and a turbulence intensity.
+Optionaly, one can specify a scale factor for the size of the zone, an elevation function to add a vertical aspect, and a turbulence intensity.
 If not specified, default values are used.
 As for models, convergence tolerance, and other precision parameters, they are determined by a fidelity number that is passed as an argument to the blackbox
 
@@ -130,8 +130,10 @@ How to run the program ?
 At any point, adding -h to the command will pull up a help menu for more detail. Here are the subcommands :
     "run"            : run blackbox with a certain instance or param file and a point to evaluate
     "show-windrose"  : plot the windrose of a certain wind data folder
-    "show-terrain"   : plot a certain terrain, optionaly with a point to plot. Good to determine a starting point
+    "show-zone"      : plot a certain zone, optionaly with a point to plot. Good to determine a starting point
     "show-elevation" : plot the elevation function used
+    "show-turbine"   : plot the power/ct curve and display information of turbine n
+    "instance-info"  : show the information about a specific instance
     "serve"          : start a local server that handles requests. This prevents reimporting all the libraries at every iteration.
                        Use -s when running the blackbox to send requests to the server for it to make the calculations instead of doing them from the current session
     "shutdown"       : shuts down the server
@@ -153,7 +155,7 @@ Command-specific files :
     client.py      : Sends the right request to the server, according to command-line arguments
     server.py      : Runs the appropriate code according to the request received and responds with the result
     blackbox.py    : Runs the blackbox with given parameter file, point, seed, and fidelity
-    plot_functions : Plots the windrose or the terrain
+    plot_functions : Plots the windrose, the zone, the turbine's power/ct curve, or the elevstion function
 
 Other files :
     windfarm_data.py : Builds the objects necessary to run the blackbox from the parameter file
@@ -192,16 +194,28 @@ Other files :
 #------------------------#
 '''
     Can have whitelines of random lines in between, as long as the line
-    starts with the right parameter name, then whitespace, then the data
+    starts with the right parameter name, then whitespace, then the data.
+    Order does not matter.
     --------------------------------------------------------------------
     OBJECTIVE_FUNCTION      <name of objective function>        (*)
     ZONE                    <id of zone>                        (*)  
     BUDGET                  <Budget in USD>
-    WIND_DATA               <id (index) of wind data file>      (*)
+    WIND_DATA               <id (index) of wind data folder>    (*)
     TI                      <float value>
     ELEVATION_FUNCTION      <id (index) of shear function>
     WIND_TURBINES           <ids (indices) of wind turbines>    (*) (separated by commas)
     SCALE_FACTOR            <float value>
     --------------------------------------------------------------------
     Note : the ones with (*) are mandatory, others are optional
+'''
+
+
+#---------#
+#- Units -#
+#---------#
+'''
+    The units, if not specified, are as follow :
+        - Energy : GWh
+        - Money  : $1000
+        - Time   : Months
 '''
