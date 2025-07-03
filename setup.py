@@ -9,6 +9,7 @@ setup(
     package_data={
         "amon": ["data/**/*"],
         "amon": ["instances/**/*"]
+        "amon": ["starting_points/**/*"]
     },
     include_package_data=True,
     entry_points={
