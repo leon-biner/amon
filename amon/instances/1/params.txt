@@ -4,3 +4,4 @@ WIND_TURBINES      1
 WIND_DATA          2
 SCALE_FACTOR       0.2
 ZONE               1
+NB_WIND_TURBINES   30

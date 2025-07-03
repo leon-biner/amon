@@ -1,20 +1,7 @@
-heights = 'heights [67'
-yaw     = 'yaw [0'
-types     = 'types [0'
-for _ in range(19):
-	heights += ', 67'
-	yaw     += ', 0'
-	types     += ', 0'
-heights += ', 67]'
-yaw += ', 0]'
-types += ', 0]'
-print(heights)
-print(yaw)
-
-with open('x5.txt', 'a') as f:
-	f.write('\n')
-	f.write(heights)
-	f.write('\n')
-	f.write(yaw)
-	f.write('\n')
-	f.write(types)
+with open("x5.txt", 'r') as f:
+    lines = f.readlines()
+true_lines = []
+for line in lines:
+    true_lines.append(line.replace(',', ''))
+with open("x5.txt", 'w') as f:
+    f.write(true_lines[0])

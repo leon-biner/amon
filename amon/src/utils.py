@@ -33,28 +33,34 @@ AVAILABLE_TURBINES_NAMES = ['V80', 'OpenWind', 'IEA_22MW', 'V82', 'Bespoke_6MW',
 MAX_TURBINE_HEIGHTS = [100, 100, 187.5, 100, 187.5, 150]
 
 # Reads the point file
-def getPoint(point_filepath):
+def getPoint(point_filepath, nb_turbines):
     if point_filepath is None:
         return None
     try:
-        with open(point_filepath, 'r') as file:
-            content = file.read().splitlines()
-    except FileNotFoundError:
-        raise FileNotFoundError(f"\033[91mError\033[0m: Invalid point file at {point_filepath}")
-    point = {}
-    keys = ['coords', 'types', 'heights', 'yaw_angles']
-    point['types'] = None
-    point['heights']  = None
-    point['yaw_angles'] = None
-    for line in content:
-        for key in keys:
-            if line.startswith(key):
-                point[key] = ast.literal_eval(line[len(key):].strip())
-    if not point['yaw_angles']:
-        point['yaw_angles'] = [0 for _ in range(int(len(point['coords'])/2))]
-    if not point['types']:
-        point['types'] = [0 for _ in range(int(len(point['coords'])/2))]
-    return point
+        try:
+            with open(point_filepath, 'r') as file:
+                lines = file.read().splitlines()
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Invalid point file at {point_filepath}")
+        point = {}
+        line = next((line for line in lines if line.split()), None)
+        if line is None:
+            raise ValueError("Empty point file")
+        values = [float(value.strip()) for value in line.split()]
+        if nb_turbines is not None:
+            if len(values) / 5 != nb_turbines:
+                raise ValueError(f"Point must be 5 times as long as number of turbines, one per variable (x, y, models, heights, yaw angles), currently has {len(values)} values for {nb_turbines} turbines")
+        else:
+            if len(values) % 5 != 0:
+                raise ValueError(f"Point must be 5 times as long as number of turbines, one per variable (x, y, models, heights, yaw angles), currently has {len(values)} values")
+            nb_turbines = len(values) // 5
+        point['coords']  = [value for value in values[:(2*nb_turbines)]]
+        point['types']   = [int(value) for value in values[(2*nb_turbines):(3*nb_turbines)]]
+        point['heights'] = [value for value in values[(3*nb_turbines):(4*nb_turbines)]]
+        point['yaw']     = [value for value in values[(4*nb_turbines):(5*nb_turbines)]]
+        return point
+    except Exception as e:
+        raise ValueError(f"\033[91mError\033[0m: Problem with point file : {e}")
 
 # Reads a string and returns the corresponding path
 def getPath(path, includes_file=True):
@@ -107,7 +113,7 @@ def getFunctionFromFile(filepath):
 def getInstanceInfo(instance):
     if instance > len(INSTANCES_PARAM_FILEPATHS):
         raise ValueError(f"\033[91mError\033[0m: Instance {instance} does not exist, choose from 1 to {len(INSTANCES_PARAM_FILEPATHS)}")
-    nb_turbines_instances = [30, 12, 6, 11, 21]
+    nb_turbines_instances = [30, 12, 6, 11, 'VAR']
     info = f"NB_TURBINES        {nb_turbines_instances[instance-1]}\n"
     with open(INSTANCES_PARAM_FILEPATHS[instance - 1], 'r') as param_file:
         info += param_file.read()

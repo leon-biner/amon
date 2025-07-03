@@ -77,7 +77,8 @@ class WindFarmData:
                        "ELEVATION_FUNCTION" : self.__getElevationFunction,    # returns python function object
                        "WIND_TURBINES"      : self.__getWindTurbines,         # returns dict with data
                        "SCALE_FACTOR"       : float,
-                       "BLACKBOX_OUTPUT"    : self.__getBlackboxOutput
+                       "BLACKBOX_OUTPUT"    : self.__getBlackboxOutput,
+                       "NB_WIND_TURBINES"   : self.__getNbWindTurbines,
                      }
         
         # Initialising optional parameters with default values
@@ -198,10 +199,11 @@ class WindFarmData:
         self.elevation_function = raw_data['ELEVATION_FUNCTION']
         
 
-        #--------------------------------#
-        #- Obj function, BBO and budget -#
-        #--------------------------------#
+        #---------------------------------------------#
+        #- Nb turbines, Obj function, BBO and budget -#
+        #---------------------------------------------#
 
+        self.nb_turbines = raw_data['NB_WIND_TURBINES']
         self.obj_function = raw_data['OBJECTIVE_FUNCTION']
         self.budget = raw_data['BUDGET']
         self.bbo = raw_data['BLACKBOX_OUTPUT']
@@ -231,7 +233,7 @@ class WindFarmData:
 
     def __getObjectiveFunction(self, function_name):
         if function_name not in OBJECTIVE_FUNCTIONS:
-            raise ValueError(f"\033[91mError\033[0m: OBJECTIVE_FUNCTION must be one of {OBJECTIVE_FUNCTIONS}, got {function_name}")
+            raise ValueError(f"OBJECTIVE_FUNCTION must be one of {OBJECTIVE_FUNCTIONS}, got {function_name}")
         return function_name
 
     def __getElevationFunction(self, id):
@@ -245,13 +247,13 @@ class WindFarmData:
         for index in wind_turbines_indices:
             data_folder_path = AMON_HOME / 'data' / 'wind_turbines' / f'wind_turbine_{index}'
             if not data_folder_path.is_dir():
-                raise FileNotFoundError(f"\033[91mError\033[0m: No wind turbine for index = {index}, no directory at {data_folder_path}")
+                raise FileNotFoundError(f"No wind turbine for index = {index}, no directory at {data_folder_path}")
             
             # dealing with the properties
             with open(data_folder_path / 'properties.csv') as properties_file:
                 properties = next(csv.DictReader(properties_file))
                 if not REQUIRED_WIND_TURBINE_PROPERTIES.issubset(properties):
-                    raise ValueError(f"\033[91mError\033[0m: csv header must include {REQUIRED_WIND_TURBINE_PROPERTIES}")
+                    raise ValueError(f"csv header must include {REQUIRED_WIND_TURBINE_PROPERTIES}")
             wt_data['names'].append(properties['name'])
             wt_data['diameters'].append(int(properties['diameter[m]']))
             wt_data['hub_heights'].append(int(properties['hub_height[m]']))
@@ -260,7 +262,7 @@ class WindFarmData:
             powerct_curve_file_data = pd.read_csv(data_folder_path / 'powerct_curve.csv')
             headers = powerct_curve_file_data.columns
             if not REQUIRED_POWERCT_CURVE_HEADERS.issubset(headers):
-                raise ValueError(f"\033[91mError\033[0m: PowerCt curve headers must include {REQUIRED_POWERCT_CURVE_HEADERS}")
+                raise ValueError(f"PowerCt curve headers must include {REQUIRED_POWERCT_CURVE_HEADERS}")
             wind_speed_values = powerct_curve_file_data['WindSpeed[m/s]'].values
             power_values = powerct_curve_file_data['Power[MW]'].values*1000
             raw_ct_values = powerct_curve_file_data['Ct'].values
@@ -279,8 +281,18 @@ class WindFarmData:
     def __getBlackboxOutput(self, list_outputs):
         list_outputs = [output.strip() for output in list_outputs.split(',')]
         if not set(list_outputs).issubset(ACCEPTED_BBO_VALUES):
-            raise ValueError(f"\033[91mError\033[0m: BLACKBOX_OUTPUT must be within {ACCEPTED_BBO_VALUES}")
+            raise ValueError(f"BLACKBOX_OUTPUT must be within {ACCEPTED_BBO_VALUES}")
         return list_outputs 
+
+    def __getNbWindTurbines(self, nb):
+        try:
+            nb_turbines = int(nb)
+        except ValueError:
+            if nb.strip().lower() == 'var':
+                nb_turbines = None
+            else:
+                raise ValueError("NB_TURBINES must be an integer or VAR")
+        return nb_turbines
 
 
     #-----------------#
