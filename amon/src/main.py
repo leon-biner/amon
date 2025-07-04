@@ -57,10 +57,12 @@ def _showZone(args):
     showZone(args)
 
 def _showTurbine(args):
+    print("Showing turbine...")
     from amon.src.plot_functions import showTurbine
     showTurbine(args)
 
 def _showElevation(args):
+    print("Showing elevation...")
     from amon.src.plot_functions import showElevation
     showElevation(args)
 

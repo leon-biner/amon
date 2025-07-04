@@ -133,7 +133,7 @@ def showZone(args):
 def showTurbine(args):
     turbine_path = AMON_HOME / 'data' / 'wind_turbines' / f'wind_turbine_{args.turbine_id}'
     if not turbine_path.exists():
-        raise ValueError(f"\033[91mError\033[0m: Turbine {args.turbine_id} does not exist")
+        raise ValueError(f"\033[91mError\033[0m: Turbine {args.turbine_id} does not exist, choose from 1 to 6")
     save_filepath = getPath(args.save)
 
     with open(turbine_path / 'powerct_curve.csv', 'r') as f:
@@ -174,7 +174,7 @@ def showTurbine(args):
 def showElevation(args):
     data_filepath = AMON_HOME / 'data' / 'elevation_functions' / f'elevation_function_{args.function_id}.py'
     if not data_filepath.exists():
-        raise ValueError(f"\033[91mError\033[0m: Elevation function {args.function_id} does not exist")
+        raise ValueError(f"\033[91mError\033[0m: Elevation function {args.function_id} does not exist, only 1 available")
     elevation_function = getFunctionFromFile(data_filepath)
 
     if args.limits is not None:

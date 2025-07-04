@@ -56,7 +56,7 @@ def create_parser(run_f, windrose_f, show_zone_f, show_turbine_f, show_elevation
     parser_instance.set_defaults(func=instance_info_f)
 
     # Command : check
-    parser_check = subparsers.add_parser("check", help='Validate output')
+    parser_check = subparsers.add_parser("check", help='\033[94mValidate output\033[0m')
     parser_check.add_argument("--debug", action='store_true', help='Show full error messages')
     parser_check.set_defaults(func=check_f)
 
