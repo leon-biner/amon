@@ -119,3 +119,19 @@ def getInstanceInfo(instance):
         info += param_file.read()
     return info
     
+# This function validates the output against hardcoded values
+def check():
+    import subprocess
+    targets = { 1 : ['-42.2572597633', '0.0000000000', '0.0000000000', '0.0000000000'],
+                2 : ['19623.9642234370', '0.0000000000', '0.0000000000', '0.0000000000'],
+                3 : ['1.0450466129', '0.0000000000', '0.0000000000', '0.0000000000'],
+                4 : ['1.7567544267', '0.0000000000', '0.0000000000', '0.0000000000', '-99979760.0000000000'],
+                5 : ['35958.4901323267', '0.0000000000', '0.0000000000', '0.0000000000'] }
+    results = {}
+    for i in range(5):
+        instance = i+1
+        results[instance] = subprocess.run(['amon', 'run', f'{instance}', f'AMON_HOME/starting_pts/x{instance}.txt', '-s', '1'], capture_output=True, text=True).stdout.split()
+    for instance, target_result in targets.items():
+        if target_result != results[instance]:
+            return "\033[91mCHECK INVALID\033[0m: Unexpected results, please contact some_adress@provider.extension"
+    return "\033[92mCHECK VALID\033[0m"

@@ -137,6 +137,7 @@ At any point, adding -h to the command will pull up a help menu for more detail.
     "serve"          : start a local server that handles requests. This prevents reimporting all the libraries at every iteration.
                        Use -s when running the blackbox to send requests to the server for it to make the calculations instead of doing them from the current session
     "shutdown"       : shuts down the server
+    "check"          : Verifies if the output is as expected
 
 There are multiple arguments and flags, use the -h menu or look at the argarsing.py file for details
 

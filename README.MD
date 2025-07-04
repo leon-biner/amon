@@ -9,6 +9,8 @@ It is also good to mention that some files will not be there in the final versio
 The program can be run from anywhere with the <amon> command. Add -h or --help after <amon> to see the different commands.
 There are several commands, arguments, and flags. To see the help menu of a certain command, <run> for example, type <amon run -h>.
 
+For filepaths, the variable <AMON_HOME> can be used to naviguate the amon package file structure. For example, to give amon the starting point x1.txt, you can write <AMON_HOME/starting_pts/x1.txt>
+
 ## Commands
 
 # run
@@ -104,3 +106,41 @@ Flags
 -----
 	--port  : Set a port number (default is 8765), matching the server's port
 	--debug : Show full error messages
+
+# check
+
+The <check> command is only used to verify if the output is consistent with other machines.
+
+## File structure
+
+The file structure is as follows:
+
+|-- amon/
+    |-- src/
+        |-- *.py
+    |-- instances/
+        |-- instance_n/
+            |-- param_file.txt
+    |-- data/
+        |-- elevation_functions/
+            |-- elevation_function_n.py
+        |-- wind_data/
+            |-- wind_data_n/
+                |-- wind_direction.csv
+                |-- wind_speed.csv
+        |-- wind_turbines/
+            |-- wind_turbine_n/
+                |-- properties.csv (name, diameter, hub_height)
+                |-- powerct_curve.csv (windspeeds, power_values, ct_values)
+        |-- zones/
+            |-- zone_n/
+                |-- boundary_zone.shp
+                |-- exclusion_zone.shp
+    |-- starting_pts/
+	|-- xn.txt
+    |-- blueprint.py
+|-- README.MD, .gitignore, and other files
+
+## More info
+
+More info is available in the amon/blueprint.py file
