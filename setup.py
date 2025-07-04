@@ -8,7 +8,7 @@ setup(
     packages=setuptools.find_packages(),
     package_data={
         "amon": ["data/**/*"],
-        "amon": ["instances/**/*"]
+        "amon": ["instances/**/*"],
         "amon": ["starting_points/**/*"]
     },
     include_package_data=True,

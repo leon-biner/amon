@@ -1,6 +1,6 @@
 ## Installation
 
-For now, the installation is via github, with pip install git+ssh://git@github.com/leon-biner/amon.git (private repo). Eventually, I will post it on PyPI, and the installation will simply be: pip install amon. To validate installation, type <amon check>
+For now, the installation is via github, with pip install git+ssh://git@github.com/leon-biner/amon.git (private repo). Eventually, I will post it on PyPI, and the installation will simply be: pip install amon. To validate installation, type <amon check>.
 
 It is also good to mention that some files will not be there in the final version, such as the scripts used to write starting points for example.
 
@@ -28,12 +28,79 @@ where the x_n are the x values,
 
 Flags
 -----
-There are multiple flags available:
 	-s SEED     : Set the random seed, changes every call if not provided
 	-r          : Send request to the local server instead of running directly (more on this in the **server** command section)
 	--port PORT : Set the port used by the server
-	--debug     : Shows full error messages
+	--debug     : Show full error messages
 
 # show-windrose
 
+The <show-windrose> command is used to display a specific wind data (from 1 to 4) in the form of a windrose.
+The first and only argument is the id of the wind data.
 
+Flags
+-----
+	--save  : Save image (png) to specified path
+	--debug : Show full error messages
+
+# show-zone
+
+The <show-zone> command is used to display a specific zone (from 1 to 5).
+The first and only argument is the id of the zone.
+
+Flags
+-----
+	--point        : Display turbine locations of specified point on top of zone
+	--save         : Save image (png) to specified path
+	--no-grid      : Turn off the grid
+	--scale-factor : Scale the size of the zone by a certain factor
+	--debug        : Show full error messages
+
+# show-turbine
+
+The <show-turbine> command displays the power/ct curve of a specific turbine (from 1 to 6), as well as its default height and its diameter.
+The first and only argument is the id of the turbine.
+
+Flags
+-----
+	--save  : Save image (png) to specified path
+	--debug : Show full error messages
+
+# show-elevation
+
+The <show-elevation> command is used to display the 3D elevation function (currently only 1 available).
+The first and only argument is the id of the function.
+
+Flags
+-----
+	--limits : Set the domain over which to plot the function (4 arguments, x_low, y_low, x_high, y_high)
+	--save   : Save image (png) to specified path
+	--debug  : Show full error messages
+
+# instance-info
+
+The <instance-info> command is used to display details about an instance, such as the number of turbines, the available models, etc.
+The first and only argument is the id of the instance.
+
+Flags
+-----
+	--debug : Show full error messages
+
+# serve
+
+The <serve> command is used to launch a local server. Once the server is up, it is possible to send requests to the server with the -r flag (see <run> command info) instead of opening a new session. The server will run the blackbox and send the result as a response.
+This allows the blackbox to be called over and over again from a terminal without having to import libraries and construct certain objects again, as the server's session stays active while the client starts and stops his session every time. To use the server, simply start it in another terminal window with <amon serve>, and then call the blackbox with the <-r> flag. The http post requests can be seen in the server's terminal.
+
+Flags
+-----
+	--port  : Set a port number (default is 8765)
+	--debug : Show full error messages
+
+# shutdown
+
+The <shutdown> command is used to shut the server down. This can also be done by killing the server's process. It will confirm if the server has been properly shut down or not.
+
+Flags
+-----
+	--port  : Set a port number (default is 8765), matching the server's port
+	--debug : Show full error messages

@@ -11,7 +11,7 @@ def showWindrose(args):
     wind_data_path = AMON_HOME / 'data' / 'wind_data' / f'wind_data_{args.wind_data_id}'
     
     if not wind_data_path.exists():
-        raise ValueError(f"\033[91mError\033[0m: Windrose {args.wind_data_id} does not exist")
+        raise ValueError(f"\033[91mError\033[0m: Windrose {args.wind_data_id} does not exist, choose from 1 to 4")
 
     wind_speed_path     = wind_data_path / 'wind_speed.csv'
     wind_direction_path = wind_data_path / 'wind_direction.csv'
@@ -45,7 +45,7 @@ def showZone(args):
     zone_path = AMON_HOME / 'data' / 'zones' / f'zone_{args.zone_id}'
     
     if not zone_path.exists():
-        raise ValueError(f"\033[91mError\033[0m: Zone {args.zone_id} does not exist")
+        raise ValueError(f"\033[91mError\033[0m: Zone {args.zone_id} does not exist, choose from 1 to 5")
 
     boundary_zone_path  = zone_path / 'boundary_zone.shp'
     exclusion_zone_path = zone_path / 'exclusion_zone.shp'
@@ -72,7 +72,7 @@ def showZone(args):
             exclusion_zone.append(shapely.Polygon(coords.T))
         
 
-    point = getPoint(point_filepath)
+    point = getPoint(point_filepath, None)
     if point:
         x, y = [float(x) for x in point['coords'][0::2]], [float(y) for y in point['coords'][1::2]]
     else:
