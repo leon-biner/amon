@@ -1,0 +1,35 @@
+All in increasing fidelity
+
+
+Rotor-average models (source : py_wake docs)
+--------------------
+RotorCenter
+PolarGrid
+EqGridRotorAvg
+CGIRotorAvg(4)
+CGIRotorAvg(7)
+CGIRotorAvg(9)
+CGIRotorAvg(21) == GaussianOverlapAvgModel
+
+
+Superposition models (sources : https://www.nature.com/articles/s41598-023-33165-4)
+--------------------
+MaxSum
+LinearSum
+SafeSquaredSum
+
+
+Wake deficit models
+-------------------
+NOJ
+BastankhahGaussianDeficit
+ZongGaussianDeficit
+CarbajofuertesGaussianDeficit
+
+Blockage models
+---------------
+Rathman (difference is very small between these models)
+
+Turbulence models
+-----------------
+CrespoHernandez (difference is so small between those)
