@@ -1,146 +1,265 @@
-## Installation
+# Installation
 
-For now, the installation is via github, with pip install git+ssh://git@github.com/leon-biner/amon.git (private repo). Eventually, I will post it on PyPI, and the installation will simply be: pip install amon. To validate installation, type <amon check>.
+The installation is via GitHub (for now):
 
-It is also good to mention that some files will not be there in the final version, such as the scripts used to write starting points for example.
+```bash
+pip install git+ssh://git@github.com/leon-biner/amon.git
+```
 
-## Usage
+> Note: This is a private repository.
 
-The program can be run from anywhere with the <amon> command. Add -h or --help after <amon> to see the different commands.
-There are several commands, arguments, and flags. To see the help menu of a certain command, <run> for example, type <amon run -h>.
+Eventually, the package will be published on PyPI, and installation will simply be:
 
-For filepaths, the variable <AMON_HOME> can be used to naviguate the amon package file structure. For example, to give amon the starting point x1.txt, you can write <AMON_HOME/starting_pts/x1.txt>
+```bash
+pip install amon
+```
 
-## Commands
+To verify the installation, run:
 
-# run
+```bash
+amon check
+```
 
-The <run> command is the central one, as it launches the balckbox. 
-The arguments' details are available in the help menu of the run command : <amon run -h>.
+> Note: Some utility scripts (e.g., for generating starting points) are included for development purposes only and will be removed in the final release.
 
-The first argument is either a parameter file or an instance number. The instances are pre-made parameter files that can be investigated in the amon/instances/ folder. Details about writing parameter files are available in blueprint.py.
-The second argument is the point file to evaluate. For now, this file is a single line of space-separated values, each corresponding to a specific variable. Let's denote by n the number of wind turbines. The first 2n values are the positions of the turbines in the form (x_1 y_1 x_2 y_2 ... x_n y_n). The next n values are the types of wind turbines, so the index of the wind turbine chosen within the available ones. For example, if the parameter file included turbines 1, 3, and 5, the corresponding types would be 0, 1, 2. After that comes the heights of each turbine, and then the yaw angles. There is a total of 5n values in a point.
-**Point example**: Say there is a farm with 4 turbines to place and 2 models available. The point file would look like this:
+# Usage
+
+The program can be run from anywhere using the `amon` command.
+
+To view all available commands:
+
+```bash
+amon -h
+```
+
+To view the help menu for a specific subcommand, `run` for example:
+
+```bash
+amon run -h
+```
+
+The environment variable `AMON_HOME` can be used to navigate the internal package file structure.  
+For example, to provide the starting point file `x1.txt`:
+
+```bash
+AMON_HOME/starting_pts/x1.txt
+```
+
+
+# Commands
+
+## run
+
+The `run` command is the central one, as it launches the blackbox. 
+
+The full list of arguments and flags can be viewed using the help menu:
+```bash
+amon run -h
+```
+
+The first argument is either:
+- A path to a **parameter file**, or
+- An **instance number**, which refers to a pre-defined parameter file located in the [`amon/instances/`](amon/instances/) folder.
+
+> Note: Details about writing parameter files are available in [`amon/blueprint.py`](amon/blueprint.py).
+
+The second argument is the **point file** to evaluate.  
+This file contains a single line of **space-separated values**, each corresponding to a specific optimization variable.
+
+Let *n* be the number of wind turbines. The point file must contain exactly 5*n values, in the following order:
+
+1. **2n values** for turbine positions:
+   ```
+   x_1 y_1 x_2 y_2 ... x_n y_n
+   ```
+2. **n values** for turbine types :
+   ```
+   t_1 t_2 ... t_n
+   ```
+	> Note: Types are indexed relative to those available in the parameter file, see the `instance-info` command to see an instance's parameter file details
+3. **n values** for hub heights:
+   ```
+   h_1 h_2 ... h_n
+   ```
+4. **n values** for yaw angles:
+   ```
+   yaw_1 yaw_2 ... yaw_n
+   ```
+
+So, the full format is:
+
+```text
+x_1 y_1 x_2 y_2 ... x_n y_n t_1 ... t_n h_1 ... h_n yaw_1 ... yaw_n
+```
+
+**Example**: For a farm with 4 turbines and 2 available turbine models:
+
+```text
 x_1 y_1 x_2 y_2 x_3 y_3 x_4 y_4 t_1 t_2 t_3 t_4 h_1 h_2 h_3 h_4 yaw_1 yaw_2 yaw_3 yaw_4
-where the x_n are the x values,
-          y_n are the y values,
-	  t_n are the types,
-	  h_n are the heights,
-	  and yaw_n are the yaw angles.
+```
 
-Flags
------
-	-s SEED     : Set the random seed, changes every call if not provided
-	-r          : Send request to the local server instead of running directly (more on this in the **server** command section)
-	--port PORT : Set the port used by the server
-	--debug     : Show full error messages
+Where:
+- `x_n` = x-coordinate of turbine *n* 
+- `y_n` = y-coordinate of turbine *n*  
+- `t_n` = type index of turbine *n* 
+- `h_n` = hub height of turbine *n*  
+- `yaw_n` = yaw angle of turbine *n*
 
-# show-windrose
+### Flags
 
-The <show-windrose> command is used to display a specific wind data (from 1 to 4) in the form of a windrose.
+```
+-s SEED     : Set the random seed (random by default if not specified)
+-r          : Send request to the local server instead of running directly (see the `serve` command)
+--port PORT : Specify the port for the local server
+--debug     : Show full error tracebacks for debugging
+```
+
+## show-windrose
+
+The `show-windrose` command is used to display a specific wind data (from 1 to 4) in the form of a windrose.
+
 The first and only argument is the id of the wind data.
 
-Flags
------
-	--save  : Save image (png) to specified path
-	--debug : Show full error messages
+### Flags
+ 
+```
+--save  : Save image (png) to specified path
+--debug : Show full error messages
+```
 
-# show-zone
+## show-zone
 
-The <show-zone> command is used to display a specific zone (from 1 to 5).
+The `show-zone` command is used to display a specific zone (from 1 to 5).
+
 The first and only argument is the id of the zone.
 
-Flags
------
-	--point        : Display turbine locations of specified point on top of zone
-	--save         : Save image (png) to specified path
-	--no-grid      : Turn off the grid
-	--scale-factor : Scale the size of the zone by a certain factor
-	--debug        : Show full error messages
+### Flags
 
-# show-turbine
+```
+--point        : Display turbine locations of specified point on top of zone
+--save         : Save image (png) to specified path
+--no-grid      : Turn off the grid
+--scale-factor : Scale the size of the zone by a certain factor
+--debug        : Show full error messages
+```
 
-The <show-turbine> command displays the power/ct curve of a specific turbine (from 1 to 6), as well as its default height and its diameter.
+## show-turbine
+
+The `show-turbine` command displays the power/ct curve of a specific turbine (from 1 to 6), as well as its default height and its diameter.
+
 The first and only argument is the id of the turbine.
 
-Flags
------
-	--save  : Save image (png) to specified path
-	--debug : Show full error messages
+### Flags
 
-# show-elevation
+```
+--save  : Save image (png) to specified path
+--debug : Show full error messages
+```
 
-The <show-elevation> command is used to display the 3D elevation function (currently only 1 available).
+## show-elevation
+
+The  `show-elevation` command is used to display the 3D elevation function (currently only 1 available).
+
 The first and only argument is the id of the function.
 
-Flags
------
-	--limits : Set the domain over which to plot the function (4 arguments, x_low, y_low, x_high, y_high)
-	--save   : Save image (png) to specified path
-	--debug  : Show full error messages
+### Flags
+ 
+```
+--limits : Set the domain over which to plot the function (4 arguments, x_low, y_low, x_high, y_high)
+--save   : Save image (png) to specified path
+--debug  : Show full error messages
+```
 
-# instance-info
+## instance-info
 
-The <instance-info> command is used to display details about an instance, such as the number of turbines, the available models, etc.
+The `instance-info` command is used to display details about an instance, such as the number of turbines, the available models, etc.
+
 The first and only argument is the id of the instance.
 
-Flags
------
-	--debug : Show full error messages
+### Flags
 
-# serve
+```
+--debug : Show full error messages
+```
 
-The <serve> command is used to launch a local server. Once the server is up, it is possible to send requests to the server with the -r flag (see <run> command info) instead of opening a new session. The server will run the blackbox and send the result as a response.
-This allows the blackbox to be called over and over again from a terminal without having to import libraries and construct certain objects again, as the server's session stays active while the client starts and stops his session every time. To use the server, simply start it in another terminal window with <amon serve>, and then call the blackbox with the <-r> flag. The http post requests can be seen in the server's terminal.
+## serve
 
-Flags
------
-	--port  : Set a port number (default is 8765)
-	--debug : Show full error messages
+The `serve` command is used to launch a local server that hosts a Python session.
 
-# shutdown
+Once the server is running, requests can be sent to it using the `-r` flag with the `amon run` command.  
+This allows the client to repeatedly call the blackbox without reloading libraries or reinitializing objects, since the server's session remains active between calls.
 
-The <shutdown> command is used to shut the server down. This can also be done by killing the server's process. It will confirm if the server has been properly shut down or not.
+To use the server, start it in a separate terminal:
 
-Flags
------
-	--port  : Set a port number (default is 8765), matching the server's port
-	--debug : Show full error messages
+```bash
+amon serve
+```
 
-# check
+Then, call the blackbox with the `r` flag to send requests to the server:
 
-The <check> command is only used to verify if the output is consistent with other machines.
+```bash
+amon run -r ...
+```
+
+> Note: HTTP POST requests will be logged in the server terminal.
+
+### Flags
+
+```
+--port  PORT  : Set the port number (default: 8765)
+--debug       : Show full error tracebacks
+```
+
+
+## shutdown
+
+The `shutdown` command is used to shut the server down. This can also be done by killing the server's process.
+A confirmation or error message is sent to indicate if the server has been properly shut down or not.
+
+### Flags
+
+```
+--port  : Set a port number (default: 8765), matching the server's port
+--debug : Show full error messages
+```
+
+## check
+
+The `check` command is only used to verify if the output is consistent with other machines.
 
 ## File structure
 
 The file structure is as follows:
 
-|-- amon/
-    |-- src/
-        |-- *.py
-    |-- instances/
-        |-- instance_n/
-            |-- param_file.txt
-    |-- data/
-        |-- elevation_functions/
-            |-- elevation_function_n.py
-        |-- wind_data/
-            |-- wind_data_n/
-                |-- wind_direction.csv
-                |-- wind_speed.csv
-        |-- wind_turbines/
-            |-- wind_turbine_n/
-                |-- properties.csv (name, diameter, hub_height)
-                |-- powerct_curve.csv (windspeeds, power_values, ct_values)
-        |-- zones/
-            |-- zone_n/
-                |-- boundary_zone.shp
-                |-- exclusion_zone.shp
-    |-- starting_pts/
-	|-- xn.txt
-    |-- blueprint.py
-|-- README.MD, .gitignore, and other files
+```
+amon/
+├── src/
+│   └── *.py
+├── instances/
+│   └── instance_n/
+│       └── param_file.txt
+├── data/
+│   ├── elevation_functions/
+│   │   └── elevation_function_n.py
+│   ├── wind_data/
+│   │   └── wind_data_n/
+│   │       ├── wind_direction.csv
+│   │       └── wind_speed.csv
+│   ├── wind_turbines/
+│   │   └── wind_turbine_n/
+│   │       ├── properties.csv (name, diameter, hub_height)
+│   │       └── powerct_curve.csv (windspeeds, power_values, ct_values)
+│   └── zones/
+│       └── zone_n/
+│           ├── boundary_zone.shp
+│           └── exclusion_zone.shp
+├── starting_pts/
+│   └── xn.txt
+├── blueprint.py
+```
+
+README.md, .gitignore, and other files (at top level)
 
 ## More info
 
-More info is available in the amon/blueprint.py file
+More details are available in [`amon/blueprint.py`](amon/blueprint.py)
