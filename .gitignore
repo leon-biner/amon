@@ -2,3 +2,6 @@
 __pycache__
 .DS_store
 build
+models_ranking
+sorted_differences.txt
+models_ranking.txt
