@@ -7,9 +7,11 @@ setup(
     description='wind farm blackbox',
     packages=setuptools.find_packages(),
     package_data={
-        "amon": ["data/**/*"],
-        "amon": ["instances/**/*"],
-        "amon": ["starting_points/**/*"]
+        "amon": [
+            "data/**/*",
+            "instances/**/*",
+            "starting_pts/**/*"
+        ],
     },
     include_package_data=True,
     entry_points={

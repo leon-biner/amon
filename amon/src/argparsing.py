@@ -4,7 +4,7 @@ import argparse
 from amon.src.utils import AMON_HOME
 
 def create_parser(run_f, windrose_f, show_zone_f, show_turbine_f, show_elevation_f, instance_info_f, check_f, start_server_f, shutdown_server_f):
-    parser = argparse.ArgumentParser(description=f"AMON, a Wind Farm Blackbox. Use \033[94mAMON_HOME\033[0m in filepaths to refer to: {AMON_HOME}")
+    parser = argparse.ArgumentParser(description=f"AMON, a Wind Farm Blackbox. Use \033[94mAMON_HOME\033[0m in filepaths to refer to: \033[94m{AMON_HOME}\033[0m. The provided starting points are in \033[94mAMON_HOME/starting_pts/xn.txt\033[0m")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # Command: run

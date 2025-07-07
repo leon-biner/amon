@@ -39,7 +39,7 @@ def runBB(args):
 
     # Get the point to evaluate
     point_filepath = utils.getPath(args.point, includes_file=True)
-    point = utils.getPoint(point_filepath)
+    point = utils.getPoint(point_filepath, windfarm_data.nb_turbines)
     x, y = [float(x) for x in point['coords'][0::2]], [float(y) for y in point['coords'][1::2]]
     types = point['types']
     models = []
@@ -60,10 +60,10 @@ def runBB(args):
     else:
         for height, x_i, y_i in zip(heights, x, y):
             absolute_heights.append(height + elevation_function(x_i, y_i))
-    yaw_angles = point['yaw_angles']
+    yaw_angles = point['yaw']
 
     if not (len(x) == len(y) == len(types) == len(absolute_heights) == len(yaw_angles)):
-        raise ValueError("\033[91mError\033[0m: All fields of evaluated point must have the same dimensions")
+        raise ValueError("\033[91mError\033[0m: All fields of evaluated point (x, y, types, heights, yaw) must have the same dimensions")
     # Perturbation of wind data
     wind_speeds     = []
     wind_directions = []
