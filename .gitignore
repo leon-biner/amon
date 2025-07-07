@@ -1,7 +1,13 @@
 *.egg-info
-__pycache__
-.DS_store
-build
+__pycache__/
+.DS_store/
+build/
 models_ranking
 sorted_differences.txt
 models_ranking.txt
+**/s.py
+**/s2.py
+models_ranking.txt
+models_ranking/
+models_test.py
+sorted_differences.txt
