@@ -48,7 +48,7 @@ AMON_HOME/starting_pts/x1.txt
 
 # Commands
 
-## run
+## `run`
 
 The `run` command is the central one, as it launches the blackbox. 
 
@@ -114,7 +114,7 @@ Where:
 --debug     : Show full error tracebacks for debugging
 ```
 
-## show-windrose
+## `show-windrose`
 
 The `show-windrose` command is used to display a specific wind data (from 1 to 4) in the form of a windrose.
 
@@ -127,7 +127,7 @@ The first and only argument is the id of the wind data.
 --debug : Show full error messages
 ```
 
-## show-zone
+## `show-zone`
 
 The `show-zone` command is used to display a specific zone (from 1 to 5).
 
@@ -143,7 +143,7 @@ The first and only argument is the id of the zone.
 --debug        : Show full error messages
 ```
 
-## show-turbine
+## `show-turbine`
 
 The `show-turbine` command displays the power/ct curve of a specific turbine (from 1 to 6), as well as its default height and its diameter.
 
@@ -156,7 +156,7 @@ The first and only argument is the id of the turbine.
 --debug : Show full error messages
 ```
 
-## show-elevation
+## `show-elevation`
 
 The  `show-elevation` command is used to display the 3D elevation function (currently only 1 available).
 
@@ -170,7 +170,7 @@ The first and only argument is the id of the function.
 --debug  : Show full error messages
 ```
 
-## instance-info
+## `instance-info`
 
 The `instance-info` command is used to display details about an instance, such as the number of turbines, the available models, etc.
 
@@ -182,7 +182,7 @@ The first and only argument is the id of the instance.
 --debug : Show full error messages
 ```
 
-## serve
+## `serve`
 
 The `serve` command is used to launch a local server that hosts a Python session.
 
@@ -211,7 +211,7 @@ amon run -r ...
 ```
 
 
-## shutdown
+## `shutdown`
 
 The `shutdown` command is used to shut the server down. This can also be done by killing the server's process.
 A confirmation or error message is sent to indicate if the server has been properly shut down or not.
@@ -223,7 +223,7 @@ A confirmation or error message is sent to indicate if the server has been prope
 --debug : Show full error messages
 ```
 
-## check
+## `check`
 
 The `check` command is only used to verify if the output is consistent with other machines.
 
