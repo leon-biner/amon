@@ -27,7 +27,7 @@ def create_parser(run_f, windrose_f, show_zone_f, show_turbine_f, show_elevation
     # Command: show-zone (to show zone_n, optionally with a given point)
     parser_zone = subparsers.add_parser("show-zone", help="\033[94mDisplay zone\033[0m")
     parser_zone.add_argument("zone_id", type=int, metavar="ZONE_ID", help="\033[94mId of the zone\033[0m")
-    parser_zone.add_argument("--point", metavar="POINT", help="Display points in provided file on figure")
+    parser_zone.add_argument("--point", metavar=("POINT_FILE", "NB_TURBINES"), nargs=2, help="Display points in provided file on figure")
     parser_zone.add_argument("--save", metavar="FIGURE_PATH_PNG", help="Save figure (png) to provided path")
     parser_zone.add_argument("--no-grid", action='store_true', help="Remove grid from figure")
     parser_zone.add_argument("--scale-factor", type=float, metavar="SCALE_FACTOR", help="Factor by which to multiply the size of the zone")

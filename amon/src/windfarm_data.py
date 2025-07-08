@@ -32,6 +32,7 @@ NB_ZONES = 5
 # ACCEPTED_INTERPOLATION_METHODS   = ['linear', 'nearest', 'cubic']
 REQUIRED_WIND_TURBINE_PROPERTIES = {'name', 'diameter[m]', 'hub_height[m]'}
 ACCEPTED_BBO_VALUES              = {'OBJ', 'PLACING', 'SPACING', 'BUDGET', 'HEIGHT'}
+ACCEPTED_OPT_VARIABLES           = {'COORDS', 'HEIGHTS', 'TYPES', 'YAW'}
 # ACCEPTED_SUPERPOSITION_MODELS    = { 'SquaredSum' : SafeSquaredSum, 'LinearSum' : LinearSum, 'MaxSum' : MaxSum }
 REQUIRED_POWERCT_CURVE_HEADERS   = {'WindSpeed[m/s]', 'Power[MW]', 'Ct'}
 
@@ -79,6 +80,7 @@ class WindFarmData:
                        "SCALE_FACTOR"       : float,
                        "BLACKBOX_OUTPUT"    : self.__getBlackboxOutput,
                        "NB_WIND_TURBINES"   : self.__getNbWindTurbines,
+                       "OPT_VARIABLES"      : self.__getOptVariables
                      }
         
         # Initialising optional parameters with default values
@@ -86,7 +88,7 @@ class WindFarmData:
             "TI"                 : 0.1,
             "ELEVATION_FUNCTION" : lambda x, y: 0, # no elevation
             "SCALE_FACTOR"       : 1,
-            "BUDGET"             : None         
+            "BUDGET"             : None
         }
 
         # Read every line of the param file and set the data from it
@@ -128,7 +130,6 @@ class WindFarmData:
         max_wind_speed      = wind_data['WIND_SPEED'].max().values[0]
         speed_units_per_bin = max_wind_speed / self.nb_ws_bins
         wind_direction_bins = np.array([i*degrees_per_bin for i in range(self.nb_wd_bins)])
-        # wind_speed_bins     = np.array([0] + [0.5+i for i in range(41)]) #np.array([0] + [0.5+speed_units_per_bin*i for i in range(raw_data['NB_WIND_SPEED_BINS'])])
         wind_speed_bins     = np.array([0] + [0.5+speed_units_per_bin*i for i in range(self.nb_ws_bins)])
         wind_rose_data      = pd.DataFrame(data=None, columns=wind_direction_bins, index=wind_speed_bins[1:])
     
@@ -199,14 +200,15 @@ class WindFarmData:
         self.elevation_function = raw_data['ELEVATION_FUNCTION']
         
 
-        #---------------------------------------------#
-        #- Nb turbines, Obj function, BBO and budget -#
-        #---------------------------------------------#
+        #------------------------------------------------------------#
+        #- Nb turbines, Obj function, opt variables, BBO and budget -#
+        #------------------------------------------------------------#
 
         self.nb_turbines = raw_data['NB_WIND_TURBINES']
         self.obj_function = raw_data['OBJECTIVE_FUNCTION']
-        self.budget = raw_data['BUDGET']
+        self.opt_variables = raw_data['OPT_VARIABLES']
         self.bbo = raw_data['BLACKBOX_OUTPUT']
+        self.budget = raw_data['BUDGET']
 
 
     #-------------------#
@@ -293,6 +295,13 @@ class WindFarmData:
             else:
                 raise ValueError("NB_TURBINES must be an integer or VAR")
         return nb_turbines
+
+    def __getOptVariables(self, variables):
+        variables = [var.strip().upper() for var in variables.split(',')]
+        if not set(variables).issubset(ACCEPTED_OPT_VARIABLES):
+            raise ValueError(f"OPT_VARIABLES must be within {ACCEPTED_OPT_VARIABLES}")
+        return variables
+
 
 
     #-----------------#

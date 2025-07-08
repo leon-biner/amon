@@ -49,7 +49,7 @@ def showZone(args):
 
     boundary_zone_path  = zone_path / 'boundary_zone.shp'
     exclusion_zone_path = zone_path / 'exclusion_zone.shp'
-    point_filepath = getPath(args.point)
+    point_filepath = getPath(args.point[0])
     save_filepath  = getPath(args.save)
 
     title = f"Zone {args.zone_id}" 
@@ -72,11 +72,21 @@ def showZone(args):
             exclusion_zone.append(shapely.Polygon(coords.T))
         
 
-    point = getPoint(point_filepath, None)
-    if point:
-        x, y = [float(x) for x in point['coords'][0::2]], [float(y) for y in point['coords'][1::2]]
-    else:
+    if point_filepath is None:
         x, y = None, None
+    else:
+        try:
+            nb_turbines = int(args.point[1])
+        except (TypeError, ValueError):
+            raise ValueError(f"\033[91mError\033[0m: NB_TURBINES must be an integer, got {type(args.point[1])}")
+        try:
+            with open(point_filepath, 'r') as f:
+                lines = f.read().splitlines()
+                line = next((line for line in lines if line.split()), None) # Get the line where the point is specified
+        except FileNotFoundError:
+            raise FileNotFoundError(f"\033[91mError\[0m: No file at {point_filepath}")
+        point = [val for val in line.split()[:2*nb_turbines]]
+        x, y = [float(x) for x in point[0::2]], [float(y) for y in point[1::2]]
 
     ax = plt.subplots()[1]
     boundary_filled = gpd.GeoSeries(boundary_zone)

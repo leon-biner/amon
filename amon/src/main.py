@@ -1,10 +1,13 @@
 # main.py
+import sys
+import warnings
+
 from amon.src.argparsing import create_parser
 from amon.src.utils import DEFAULT_PORT, INSTANCES_PARAM_FILEPATHS, getInstanceInfo, getPath, simple_excepthook, check
-import sys
 
 
 def main():
+    warnings.filterwarnings("ignore")
     parser = create_parser(_runBB, _showWindrose, _showZone, _showTurbine, _showElevation, _instanceInfo, _check, _runServer, _shutdownServer)
     args = parser.parse_args()
     if not args.debug:
@@ -49,7 +52,7 @@ def _showWindrose(args):
 
 def _showZone(args):
     if args.point:
-        args.point = str(getPath(args.point))
+        args.point[0] = str(getPath(args.point[0]))
     if args.save:
         args.save = str(getPath(args.save))
     print("Showing zone...")

@@ -48,6 +48,19 @@ AMON_HOME/starting_pts/x1.txt
 
 # Commands
 
+## `instance-info`
+
+The `instance-info` command is used to display details about an instance, such as the number of turbines, the available models, etc.
+
+The first and only argument is the id of the instance.
+
+### Flags
+
+```
+--debug : Show full error messages
+```
+
+
 ## `run`
 
 The `run` command is the central one, as it launches the blackbox. 
@@ -66,9 +79,13 @@ The first argument is either:
 The second argument is the **point file** to evaluate.  
 This file contains a single line of **space-separated values**, each corresponding to a specific optimization variable.
 
-Let *n* be the number of wind turbines. The point file must contain exactly 5*n values, in the following order:
+Let *n* be the number of wind turbines and *v* the number of optimization variables **for one turbine***. The point file must contain exactly *v* times *n* values. The order is defined in the parameter file, use the `instance-info` command and look for the `OPT_VARIABLES` line to see the order for a particular instance.
 
-1. **2n values** for turbine positions:
+\* **Example**: if each turbine has its position and height controlled by an optimization variable, *v* would be **2**.  
+
+The different of the point file are written as follows, with each index corresponding to a wind turbine:
+
+1. **2n values** for turbine coordinates:
    ```
    x_1 y_1 x_2 y_2 ... x_n y_n
    ```
@@ -76,7 +93,7 @@ Let *n* be the number of wind turbines. The point file must contain exactly 5*n 
    ```
    t_1 t_2 ... t_n
    ```
-	> Note: Types are indexed relative to those available in the parameter file, see the `instance-info` command to see an instance's parameter file details
+	> Note: Types are indexed starting from 0, and relative to those available in the parameter file Look for the `WIND_TURBINES` line of the `instance-info` command to see an instance's available models. If turbines **1**, **3**, and **5** are available, their respective types would be **0**, **1**, **2**.
 3. **n values** for hub heights:
    ```
    h_1 h_2 ... h_n
@@ -86,24 +103,13 @@ Let *n* be the number of wind turbines. The point file must contain exactly 5*n 
    yaw_1 yaw_2 ... yaw_n
    ```
 
-So, the full format is:
+
+**Example**: Consider a farm with 4 turbines and and 2 available turbine models. 
+The `instance-info` command or the parameter file shows this line: `OPT_VARIABLES COORDS, HEIGHT, TYPE`. The point file would be:
 
 ```text
-x_1 y_1 x_2 y_2 ... x_n y_n t_1 ... t_n h_1 ... h_n yaw_1 ... yaw_n
+x_1 y_1 x_2 y_2 x_3 y_3 x_4 y_4 h_1 h_2 h_3 h_4 t_1 t_2 t_3 t_4 
 ```
-
-**Example**: For a farm with 4 turbines and 2 available turbine models:
-
-```text
-x_1 y_1 x_2 y_2 x_3 y_3 x_4 y_4 t_1 t_2 t_3 t_4 h_1 h_2 h_3 h_4 yaw_1 yaw_2 yaw_3 yaw_4
-```
-
-Where:
-- `x_n` = x-coordinate of turbine *n* 
-- `y_n` = y-coordinate of turbine *n*  
-- `t_n` = type index of turbine *n* 
-- `h_n` = hub height of turbine *n*  
-- `yaw_n` = yaw angle of turbine *n*
 
 ### Flags
 
@@ -112,6 +118,19 @@ Where:
 -r          : Send request to the local server instead of running directly (see the `serve` command)
 --port PORT : Specify the port for the local server
 --debug     : Show full error tracebacks for debugging
+```
+
+### Output
+
+The output is set by the BLACKBOX_OUTPUT field of the parameter file. It can be seen for each instance with the `instance-info`command.
+
+> **Example**: The parameter file has the line ```BLACKBOX_OUTPUT OBJ, SPACING, HEIGHT``` and the blackbox outputted ```100 5 -40```
+   -> The objective function's value is **100**, the spacing constraint's is **5**, and the height constraint's is **-40**.
+
+### Command example
+
+```bash
+amon run 1 AMON_HOME/starting_pts/x1.txt -s 3 --port 1234 -r
 ```
 
 ## `show-windrose`
@@ -127,6 +146,12 @@ The first and only argument is the id of the wind data.
 --debug : Show full error messages
 ```
 
+### Command example
+
+```bash
+amon show-windrose 1 --save path/to/file.png
+```
+
 ## `show-zone`
 
 The `show-zone` command is used to display a specific zone (from 1 to 5).
@@ -136,11 +161,19 @@ The first and only argument is the id of the zone.
 ### Flags
 
 ```
---point        : Display turbine locations of specified point on top of zone
+--point*       : Display turbine locations of specified point on top of zone
 --save         : Save image (png) to specified path
 --no-grid      : Turn off the grid
 --scale-factor : Scale the size of the zone by a certain factor
 --debug        : Show full error messages
+```
+
+\* The --point flag takes in 2 arguments: the path to the point file, and then number of turbines (in this order). The point file **must start with the coordinates**.
+
+### Command example
+
+```bash
+amon show-zone 1 --save path/to/file.png --point AMON_HOME/starting_pts/x1.txt 30 --scale-factor 0.2
 ```
 
 ## `show-turbine`
@@ -154,6 +187,12 @@ The first and only argument is the id of the turbine.
 ```
 --save  : Save image (png) to specified path
 --debug : Show full error messages
+```
+
+### Command example
+
+```bash
+amon show-turbine 1 --save path/to/file.png
 ```
 
 ## `show-elevation`
@@ -170,16 +209,10 @@ The first and only argument is the id of the function.
 --debug  : Show full error messages
 ```
 
-## `instance-info`
+### Command example
 
-The `instance-info` command is used to display details about an instance, such as the number of turbines, the available models, etc.
-
-The first and only argument is the id of the instance.
-
-### Flags
-
-```
---debug : Show full error messages
+```bash
+amon show-elevation 1 --save path/to/file.png --limits -100 -100 100 100
 ```
 
 ## `serve`
@@ -210,6 +243,11 @@ amon run -r ...
 --debug       : Show full error tracebacks
 ```
 
+### Command example
+
+```bash
+amon serve --port 1234
+```
 
 ## `shutdown`
 
@@ -221,6 +259,12 @@ A confirmation or error message is sent to indicate if the server has been prope
 ```
 --port  : Set a port number (default: 8765), matching the server's port
 --debug : Show full error messages
+```
+
+### Command example
+
+```bash
+amon shutdown --port 1234
 ```
 
 ## `check`

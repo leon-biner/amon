@@ -21,7 +21,7 @@ from amon.src.windfarm_data import SafeSquaredSum
 def main():
     n_wt = 64
     def getRotorAvgModel():
-        return [ RotorCenter(), PolarGridRotorAvg(), EqGridRotorAvg(), CGIRotorAvg(4), CGIRotorAvg(7), CGIRotorAvg(9), CGIRotorAvg(21), GaussianOverlapAvgModel() ]
+        return [ RotorCenter(), PolarGridRotorAvg(), EqGridRotorAvg(), CGIRotorAvg(4), CGIRotorAvg(7), CGIRotorAvg(9), CGIRotorAvg(21) ]
     def getWakeDefModels(rotor_avg_model):
         return [ NOJDeficit(rotorAvgModel=rotor_avg_model),
                  BastankhahGaussianDeficit(rotorAvgModel=rotor_avg_model, use_effective_ws=True),
@@ -40,40 +40,54 @@ def main():
     rotor_avg_models = getRotorAvgModel()
     superposition_models = getSuperpModels()
     deflection_models = getDeflectionModels()
-    for i_r, rotor_avg_model in enumerate(rotor_avg_models):
-        for i_s, superposition_model in enumerate(superposition_models):
-            for i_d, deflection_model in enumerate(deflection_models):
-                wake_deficit_models = getWakeDefModels(rotor_avg_model)
-                blockage_deficit_models = getBlockageModels(superposition_model, rotor_avg_model)
-                turbulence_models = getTurbModels(rotor_avg_model)
-                for i_w, wake_deficit_model in enumerate(wake_deficit_models):
-                    for i_b, blockage_deficit_model in enumerate(blockage_deficit_models):
-                        for i_t, turbulence_model in enumerate(turbulence_models):
-                            try:
-                                start_time = time.time()
-                                wfm = All2AllIterative( site                  = IEA37Site(n_wt),
-                                                        windTurbines          = IEA37WindTurbines(),
-                                                        wake_deficitModel     = wake_deficit_model,
-                                                        superpositionModel    = superposition_model,
-                                                        blockage_deficitModel = blockage_deficit_model,
-                                                        deflectionModel       = deflection_model,
-                                                        turbulenceModel       = turbulence_model,
-                                                        rotorAvgModel         = rotor_avg_model,
-                                                        convergence_tolerance = 1e-6 )
-                                x, y, aep_ref = read_iea37_windfarm(iea37_path + 'iea37-ex%d.yaml' % n_wt)
-                                aep_sim = wfm(x, y, tilt=0, yaw=0).aep().sum().item()
-                                differences.append({
-                                    "aep": abs(aep_sim),
-                                    "indices": [i_r, i_s, i_d, i_w, i_b, i_t],
-                                    "time": time.time() - start_time
-                                })
-                                print(f"Done with [{i_r}, {i_s}, {i_d}, {i_w}, {i_b}, {i_t}] : \033[93mAEP\033[0m = {aep_sim:3.6f}, \033[94mTime\033[0m = {time.time() - start_time:3.6f}")
-                            except Exception:
-                                print(f"Couldn't do [{i_r}, {i_s}, {i_d}, {i_w}, {i_b}, {i_t}]")
+    for i_w in range(4):
+        for i_s in range(3):
+            for i_r in range(7):
+                superposition_model = superposition_models[i_s]
+                deflection_model = deflection_models[0]
+                rotor_avg_model = rotor_avg_models[i_r]
+                wake_deficit_model = getWakeDefModels(rotor_avg_models[i_r])[i_w]
+                blockage_deficit_model = getBlockageModels(superposition_models[i_s], rotor_avg_models[i_r])[0]
+                turbulence_model = getTurbModels(rotor_avg_models[i_r])[0]
+                try:
+                    start_time = time.time()
+                    wfm = All2AllIterative( site                  = IEA37Site(n_wt),
+                                            windTurbines          = IEA37WindTurbines(),
+                                            wake_deficitModel     = wake_deficit_model,
+                                            superpositionModel    = superposition_model,
+                                            blockage_deficitModel = blockage_deficit_model,
+                                            deflectionModel       = deflection_model,
+                                            turbulenceModel       = turbulence_model,
+                                            rotorAvgModel         = rotor_avg_model,
+                                            convergence_tolerance = 1e-6 )
+                    x, y, aep_ref = read_iea37_windfarm(iea37_path + 'iea37-ex%d.yaml' % n_wt)
+                    aep_sim = wfm(x, y, tilt=0, yaw=0).aep().sum().item()
+                    differences.append({
+                        "aep": abs(aep_sim),
+                        "indices": [i_w, i_s, i_r],
+                        "time": time.time() - start_time
+                    })
+                    print("----------------------------------------------------")
+                    print(f"wake_def: {wake_deficit_model.__class__.__name__}\nsuperp: {superposition_model.__class__.__name__}\nblock: {blockage_deficit_model.__class__.__name__}\ndeflection: {deflection_model.__class__.__name__}\nturbulence: {turbulence_model.__class__.__name__}\nrotor: {rotor_avg_model.__class__.__name__}")
+                    print(f"\033[93mAEP\033[0m = {aep_sim:3.6f}, \033[94mTime\033[0m = {time.time() - start_time:3.6f}")
+                except Exception:
+                    print(f"Couldn't do [{i_w}, {i_s}, {i_r}]")
 
     sorted_time = sorted(differences, key=lambda d: d["time"])
     with open("sorted_time.txt", "w") as f:
         for diff in sorted_time:
             f.write(f"AEP: {diff['aep']:.6f}, Indices: {diff['indices']}, Time: {diff['time']:.2f} s\n")
-
 main()
+print('-----------------------')
+wfm = All2AllIterative( site                  = IEA37Site(64),
+                        windTurbines          = IEA37WindTurbines(),
+                        wake_deficitModel     = CarbajofuertesGaussianDeficit(rotorAvgModel=GaussianOverlapAvgModel(), use_effective_ws=True),
+                        superpositionModel    = SafeSquaredSum(),
+                        blockage_deficitModel = Rathmann(superpositionModel=SafeSquaredSum(), rotorAvgModel=CGIRotorAvg(21)),
+                        deflectionModel       = JimenezWakeDeflection(),
+                        turbulenceModel       = CrespoHernandez(rotorAvgModel=CGIRotorAvg(21)),
+                        rotorAvgModel         = GaussianOverlapAvgModel(),
+                        convergence_tolerance = 1e-6 )
+x, y, aep_ref = read_iea37_windfarm(iea37_path + 'iea37-ex%d.yaml' % 64)
+aep_sim = wfm(x, y, tilt=0, yaw=0).aep().sum().item()
+print(aep_sim)

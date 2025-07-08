@@ -1,0 +1,10 @@
+AEP: 1170.186392, Indices: [0, 1, 0], Time: 1.49 s
+AEP: 1341.414507, Indices: [0, 2, 0], Time: 1.51 s
+AEP: 1360.505755, Indices: [0, 2, 3], Time: 2.98 s
+AEP: 1360.703046, Indices: [0, 2, 4], Time: 3.95 s
+AEP: 1361.482815, Indices: [0, 2, 5], Time: 4.55 s
+AEP: 1301.243165, Indices: [1, 2, 0], Time: 5.38 s
+AEP: 1379.382705, Indices: [3, 0, 0], Time: 5.62 s
+AEP: 1332.638508, Indices: [3, 2, 0], Time: 6.66 s
+AEP: 1359.745581, Indices: [3, 2, 3], Time: 15.78 s
+AEP: 1356.736485, Indices: [3, 2, 4], Time: 21.18 s

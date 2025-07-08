@@ -14,7 +14,7 @@ from amon.src.windfarm_data import WindFarmData
 #        Example : there are models 1, 3, 4 in the param file, the type 3 is the model 4.
 
 # @brief : 
-def runBB(args): 
+def runBB(args):
     utils.setSeed(args.s)
     param_filepath = Path(args.instance_or_param_file)
 
@@ -39,7 +39,7 @@ def runBB(args):
 
     # Get the point to evaluate
     point_filepath = utils.getPath(args.point, includes_file=True)
-    point = utils.getPoint(point_filepath, windfarm_data.nb_turbines)
+    point = utils.getPoint(point_filepath, windfarm_data.nb_turbines, windfarm_data.opt_variables)
     x, y = [float(x) for x in point['coords'][0::2]], [float(y) for y in point['coords'][1::2]]
     types = point['types']
     models = []
@@ -72,6 +72,12 @@ def runBB(args):
     for wd in windfarm_data.WD_BB:
         wind_directions.append(np.random.normal(loc=wd, scale=14))
     # Calculate constraints and annual energy production
+    # print(f"(x, y)   : ({x}, {y})")
+    # print(f"Types    : {types}")
+    # print(f"Models   : {models}")
+    # print(f"Heights  : {heights}")
+    # print(f"Diameters: {diameters}")
+    # print(f"Yaw      : {yaw_angles}")
     aep = blackbox.AEP(x, y, ws=wind_speeds, wd=wind_directions, types=types, heights=absolute_heights, yaw_angles=yaw_angles)
     constraints = blackbox.constraints(x, y, models, diameters, heights, default_heights)
 

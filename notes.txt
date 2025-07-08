@@ -1,0 +1,7 @@
+ADD TO README
+-------------
+
+- Explanation about BB output
+- Explanation about new point file
+- Explanation about point file for show-zone --point
+- Explanation about new --point flag for show-zone

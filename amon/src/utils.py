@@ -33,7 +33,7 @@ AVAILABLE_TURBINES_NAMES = ['V80', 'OpenWind', 'IEA_22MW', 'V82', 'Bespoke_6MW',
 MAX_TURBINE_HEIGHTS = [100, 100, 187.5, 100, 187.5, 150]
 
 # Reads the point file
-def getPoint(point_filepath, nb_turbines):
+def getPoint(point_filepath, nb_turbines, opt_variables):
     if point_filepath is None:
         return None
     try:
@@ -41,26 +41,51 @@ def getPoint(point_filepath, nb_turbines):
             with open(point_filepath, 'r') as file:
                 lines = file.read().splitlines()
         except FileNotFoundError:
-            raise FileNotFoundError(f"Invalid point file at {point_filepath}")
+            raise FileNotFoundError(f"No point file at {point_filepath}")
+        
         point = {}
-        line = next((line for line in lines if line.split()), None)
+        line = next((line for line in lines if line.split()), None) # Get the line where the point is specified
+
         if line is None:
             raise ValueError("Empty point file")
-        values = [float(value.strip()) for value in line.split()]
+        
+        values = [float(value.strip()) for value in line.split()] # Separate point into single elements
+
+        nb_opt_variables = len(opt_variables) + 1 # We assume coords are always present. Since there is (x,y), we have to add 1 
+
         if nb_turbines is not None:
-            if len(values) / 5 != nb_turbines:
-                raise ValueError(f"Point must be 5 times as long as number of turbines, one per variable (x, y, models, heights, yaw angles), currently has {len(values)} values for {nb_turbines} turbines")
+            if len(values) / nb_opt_variables != nb_turbines:
+                raise ValueError(f"Point must be {nb_opt_variables} times as long as number of turbines, currently has {len(values)} values for {nb_turbines} turbines")
         else:
-            if len(values) % 5 != 0:
-                raise ValueError(f"Point must be 5 times as long as number of turbines, one per variable (x, y, models, heights, yaw angles), currently has {len(values)} values")
-            nb_turbines = len(values) // 5
-        point['coords']  = [value for value in values[:(2*nb_turbines)]]
-        point['types']   = [int(value) for value in values[(2*nb_turbines):(3*nb_turbines)]]
-        point['heights'] = [value for value in values[(3*nb_turbines):(4*nb_turbines)]]
-        point['yaw']     = [value for value in values[(4*nb_turbines):(5*nb_turbines)]]
+            if len(values) % nb_opt_variables != 0:
+                raise ValueError(f"Point must be {nb_opt_variables} times as long as number of turbines, currently has {len(values)} values")
+            nb_turbines = len(values) // nb_opt_variables
+
+        # Set the point according to the opt variables specified in the param file
+        i = 0
+        for variable in opt_variables:
+            variable = variable.lower()
+            if variable == 'coords':
+                point[variable] = [value for value in values[i*nb_turbines:(i+2)*nb_turbines]]
+                i += 2
+                continue
+            elif variable == 'types':
+                point[variable] = [int(value) for value in values[i*nb_turbines:(i+1)*nb_turbines]]
+            else:
+                point[variable] = [value for value in values[i*nb_turbines:(i+1)*nb_turbines]]
+            i += 1
+        # Set the default values for unspecified points
+        if 'coords' not in point:
+            raise ValueError("Must contain coordinates")
+        if 'types' not in point:
+            point['types'] = [0 for _ in range(nb_turbines)]
+        if 'heights' not in point:
+            point['heights'] = None # The default values are set by blackbox.py's runBB function
+        if 'yaw' not in point:
+            point['yaw'] = [0 for _ in range(nb_turbines)]
         return point
     except Exception as e:
-        raise ValueError(f"\033[91mError\033[0m: Problem with point file : {e}")
+        raise ValueError(f"\033[91mError\033[0m: Problem with point file: {e}")
 
 # Reads a string and returns the corresponding path
 def getPath(path, includes_file=True):
@@ -113,8 +138,7 @@ def getFunctionFromFile(filepath):
 def getInstanceInfo(instance):
     if instance > len(INSTANCES_PARAM_FILEPATHS):
         raise ValueError(f"\033[91mError\033[0m: Instance {instance} does not exist, choose from 1 to {len(INSTANCES_PARAM_FILEPATHS)}")
-    nb_turbines_instances = [30, 12, 6, 11, 'VAR']
-    info = f"NB_TURBINES        {nb_turbines_instances[instance-1]}\n"
+    info = ''
     with open(INSTANCES_PARAM_FILEPATHS[instance - 1], 'r') as param_file:
         info += param_file.read()
     return info
@@ -133,5 +157,7 @@ def check():
         results[instance] = subprocess.run(['amon', 'run', f'{instance}', f'AMON_HOME/starting_pts/x{instance}.txt', '-s', '1'], capture_output=True, text=True).stdout.split()
     for instance, target_result in targets.items():
         if target_result != results[instance]:
+            print(target_result)
+            print(results[instance])
             return "\033[91mCHECK INVALID\033[0m: Unexpected results, please contact some_adress@provider.extension"
     return "\033[92mCHECK VALID\033[0m"
