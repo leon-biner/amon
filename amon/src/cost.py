@@ -1,5 +1,4 @@
 # cost.py
-import time
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import weibull_min
@@ -21,11 +20,6 @@ v82_parts_costs       = {part : cost * 1.65 / 2 for part, cost in v80_parts_cost
 bespoke_6_parts_costs = {part : cost * 6.00 / 2 for part, cost in v80_parts_costs.items()}
 iea_3_4_parts_costs   = {part : cost * 3.37 / 2 for part, cost in v80_parts_costs.items()}
 
-# v80_loss_per_month = { 'rotor'        : 0.5,
-                       # 'main_bearing' : 0.25,
-                       # 'gearbox'      : 1,
-                       # 'generator'    : 0.45 } # In thousands of dollars
-                
 # The definition of the scale parameter is different in the paper, the usual lambda is theta raised to the power of -1/beta
 beta  = { 'rotor'        : 3,
           'main_bearing' : 2,
@@ -38,10 +32,10 @@ theta = { 'rotor'        : 1e-6,
           'generator'    : 8.26e-5 } # Time units in months
 
 
-V80_COST         = { 'price'      : 400,                        # Purchase price of the turbine ($1000)
-                     'parts'      : v80_parts_costs,            # Purchase price of its parts
-                     'install'    : 100,                        # Cost of installing the turbine
-                     'h_augment'  : 3 }                         # Cost of augmenting the height, in $USD per meter
+V80_COST         = { 'price'      : 400,                        # Purchase price of the turbine  ($1000)
+                     'parts'      : v80_parts_costs,            # Purchase price of its parts    ($1000)
+                     'install'    : 100,                        # Cost of installing the turbine ($1000)
+                     'h_augment'  : 3 }                         # Cost of augmenting the height, in $1000 per meter
 
 OPEN_WIND_COST   = { 'price'      : 500,
                      'parts'      : openwind_parts_costs,

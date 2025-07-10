@@ -19,7 +19,7 @@ def runBB(args):
     param_filepath = Path(args.instance_or_param_file)
 
     # Construct the blackbox
-    windfarm_data = WindFarmData(param_filepath)
+    windfarm_data = WindFarmData(param_filepath, args.f)
 
     windfarm = All2AllIterative( site                  = windfarm_data.site,
                                  windTurbines          = windfarm_data.wind_turbines,
@@ -71,13 +71,13 @@ def runBB(args):
         wind_speeds.append(np.random.normal(loc=ws, scale=1))
     for wd in windfarm_data.WD_BB:
         wind_directions.append(np.random.normal(loc=wd, scale=14))
-    # Calculate constraints and annual energy production
     # print(f"(x, y)   : ({x}, {y})")
     # print(f"Types    : {types}")
     # print(f"Models   : {models}")
     # print(f"Heights  : {heights}")
     # print(f"Diameters: {diameters}")
     # print(f"Yaw      : {yaw_angles}")
+    # Calculate constraints and annual energy production
     aep = blackbox.AEP(x, y, ws=wind_speeds, wd=wind_directions, types=types, heights=absolute_heights, yaw_angles=yaw_angles)
     constraints = blackbox.constraints(x, y, models, diameters, heights, default_heights)
 
@@ -88,6 +88,10 @@ def runBB(args):
         OBJ = -blackbox.ROI(models, heights, default_heights)
     else:
         OBJ = blackbox.LCOE(models, heights, default_heights)
+
+    # If this is a constraint-free instance, penalize the objective function according to the constraints
+    if windfarm_data.constraint_free:
+        OBJ = utils.penalizeObj(OBJ, constraints)
 
     # Set the blackbox output
     bbo = ''
@@ -154,7 +158,7 @@ class Blackbox:
         if self.budget is None:
             return { 'placing' : sum_dist_buildable_zone, 
                      'spacing' : sum_dist_between_wt,
-                     'budget'  : None,
+                     'budget'  : '-',
                      'height'  : sum_excess_height }
 
         cost_over_lifetime = lifetimeCost(chosen_models, heights, default_heights, self.lifetime)

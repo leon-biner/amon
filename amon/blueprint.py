@@ -55,9 +55,9 @@ All2AllIterative object  (see https://gitlab.windenergy.dtu.dk/TOPFARM/PyWake/-/
         ----------------------
             ds            : xarray dataset
                             data_vars={"P"  : (("wd", "ws"), probability_matrix (prob of wd_bin[i]/ws[j] combo),
-                                    "TI" : float} # Joséphine used 0.1, and the examples use that too, not sure why
+                                    "TI" : float}
                             coords={"wd":wd_bin_values, "ws":ws_bin_values} (bin center values)
-            interp_method : 'linear', 'nearest' or 'cubic', default is linear
+            interp_method : 'linear' or 'nearest', default is linear
             shear         : Function of one argument (height) that returns a multiplier 
                             for wind speed. For example, if wind speed in the dataset is
                             ws, the wind speed used for a turbine at height h is ws*shear(h)
@@ -206,6 +206,10 @@ Other files :
     ELEVATION_FUNCTION      <id (index) of shear function>
     WIND_TURBINES           <ids (indices) of wind turbines>    (*) (separated by commas)
     SCALE_FACTOR            <float value>
+    BLACKBOX_OUTPUT         <order of bbo>                      (*) (separated by commas) (choices: OBJ, SPACING, PLACING, HEIGHT, BUDGET)
+    OPT_VARIABLES           <variables to oprimize>             (*) (separated by commas) (choices: COORDS, HEIGHTS, YAW, TYPES) (same order as point file)
+    NB_WIND_TURBINES        <integer value or VAR>              (*)
+    CONSTRAINT_FREE         <TRUE or FALSE (default FALSE)
     --------------------------------------------------------------------
     Note : the ones with (*) are mandatory, others are optional
 '''

@@ -5,20 +5,19 @@ import pandas as pd
 import shapefile
 import csv
 from py_wake.site import XRSite
-# from py_wake.site.distance import StraightDistance, TerrainFollowingDistance
 from py_wake.wind_turbines.power_ct_functions import PowerCtTabular
+from py_wake.rotor_avg_models import RotorCenter, CGIRotorAvg
 from py_wake.wind_turbines import WindTurbines
-from py_wake.deficit_models import BastankhahGaussianDeficit, VortexCylinder
-# from py_wake.rotor_avg_models import GaussianOverlapAvgModel
-from py_wake.superposition_models import SquaredSum
-# from py_wake.deflection_models import FugaDeflection, GCLHillDeflection, JimenezWakeDeflection 
+from py_wake.deficit_models import NOJDeficit, BastankhahGaussianDeficit, CarbajofuertesGaussianDeficit, Rathmann
+from py_wake.deflection_models import JimenezWakeDeflection
+from py_wake.superposition_models import MaxSum, LinearSum, SquaredSum
 from py_wake.turbulence_models import CrespoHernandez
 from py_wake.site.shear import PowerShear
 import shapely
 
 from amon.src.utils import AMON_HOME, getFunctionFromFile
 
-# Prevents negative deficits, which don't make sense physically and break PyWake
+# Prevents negative deficits, which don't make sense physically and break PyWake with some models
 class SafeSquaredSum(SquaredSum):
     def __call__(self, deficit_jxxx, **kwargs):
         deficit_jxxx = np.maximum(deficit_jxxx, 0)
@@ -36,9 +35,12 @@ ACCEPTED_OPT_VARIABLES           = {'COORDS', 'HEIGHTS', 'TYPES', 'YAW'}
 # ACCEPTED_SUPERPOSITION_MODELS    = { 'SquaredSum' : SafeSquaredSum, 'LinearSum' : LinearSum, 'MaxSum' : MaxSum }
 REQUIRED_POWERCT_CURVE_HEADERS   = {'WindSpeed[m/s]', 'Power[MW]', 'Ct'}
 
+WAKE_DEFICIT_MODELS  = [NOJDeficit, BastankhahGaussianDeficit, CarbajofuertesGaussianDeficit]
+SUPERPOSITION_MODELS = [MaxSum, LinearSum, SafeSquaredSum]
+
 
 class WindFarmData:
-    def __init__(self, param_file_path, fidelity=1):
+    def __init__(self, param_file_path, fidelity):
         '''
             @brief   : sets the data used to construct the All2AllIterative object. What I call raw_data is data only used to construct other objects
             @params  : param file path from AMON_HOME
@@ -80,7 +82,8 @@ class WindFarmData:
                        "SCALE_FACTOR"       : float,
                        "BLACKBOX_OUTPUT"    : self.__getBlackboxOutput,
                        "NB_WIND_TURBINES"   : self.__getNbWindTurbines,
-                       "OPT_VARIABLES"      : self.__getOptVariables
+                       "OPT_VARIABLES"      : self.__getOptVariables,
+                       "CONSTRAINT_FREE"    : self.__getConstraintFree,
                      }
         
         # Initialising optional parameters with default values
@@ -88,7 +91,8 @@ class WindFarmData:
             "TI"                 : 0.1,
             "ELEVATION_FUNCTION" : lambda x, y: 0, # no elevation
             "SCALE_FACTOR"       : 1,
-            "BUDGET"             : None
+            "BUDGET"             : None,
+            "CONSTRAINT_FREE"    : False
         }
 
         # Read every line of the param file and set the data from it
@@ -209,6 +213,7 @@ class WindFarmData:
         self.opt_variables = raw_data['OPT_VARIABLES']
         self.bbo = raw_data['BLACKBOX_OUTPUT']
         self.budget = raw_data['BUDGET']
+        self.constraint_free = raw_data['CONSTRAINT_FREE']
 
 
     #-------------------#
@@ -302,6 +307,11 @@ class WindFarmData:
             raise ValueError(f"OPT_VARIABLES must be within {ACCEPTED_OPT_VARIABLES}")
         return variables
 
+    def __getConstraintFree(self, answer):
+        answer = answer.strip().lower()
+        if answer not in ['true', 'false']:
+            raise ValueError("CONSTRAINT_FREE must be TRUE or FALSE")
+        return answer == 'true'
 
 
     #-----------------#
@@ -315,15 +325,56 @@ class WindFarmData:
         except (ValueError, TypeError):
             raise ValueError(f"{param_name} must be a {cast_function.__name__}")
 
-    def __setModels(self, fidelity):
+    def __setModels(self, fidelity): # fidelity is a float between 0 and 1
+        if fidelity > 1 or fidelity < 0:
+            raise ValueError("\033[91mError\033[0m: Fidelity must be between 0 and 1")
+
+        # Combination of wake def, superposition, and rotor avg models in ascending fidelity
+        models_combinations = [ [0, 1, 0],
+                                [0, 2, 0],
+                                [0, 2, 1],
+                                [0, 2, 2],
+                                [0, 2, 3],
+                                [1, 2, 0],
+                                [2, 0, 0],
+                                [2, 2, 0],
+                                [2, 2, 1],
+                                [2, 2, 2] ]
+        
+        # Find right model combination according to fidelity
+        comb_index = int(fidelity * 10)
+        models_indices = models_combinations[comb_index-1]
+
+        # Fix rotor average model
+        CGI_models_args = [4, 7, 9] # Superposition models (thirs column) 1, 2, and 3 are all CGI but with different constructor arguments
+        CGI_index = models_indices[2] - 1
+        if CGI_index < 0:
+            self.rotor_avg_model = RotorCenter()
+        else:
+            self.rotor_avg_model = CGIRotorAvg(CGI_models_args[CGI_index])
+        
+        # Fix superposition model
+        self.superposition_model = SUPERPOSITION_MODELS[models_indices[1]]()
+
+        # Fix wake deficit model
+        wake_def_index = models_indices[0]
+        if wake_def_index == 0:
+            self.wake_deficit_model = WAKE_DEFICIT_MODELS[wake_def_index](rotorAvgModel=self.rotor_avg_model)
+        else:
+            self.wake_deficit_model = WAKE_DEFICIT_MODELS[wake_def_index](rotorAvgModel=self.rotor_avg_model, use_effective_ws=True)
+
+        # Fix other models that do not change
+        self.blockage_deficit_model = Rathmann(superpositionModel=self.superposition_model, rotorAvgModel=self.rotor_avg_model)
+        self.deflection_model = JimenezWakeDeflection()
+        self.turbulence_model = CrespoHernandez(rotorAvgModel=self.rotor_avg_model)
+
+        # The number of bins are fixed for now
         self.nb_ws_bins = 41
         self.nb_wd_bins = 36
-        self.interp_method = 'linear'
+        if fidelity < 0.33:
+            self.interp_method = 'nearest'
+        else:
+            self.interp_method = 'linear'
+            self.convergence_tolerance = 1e-6 # Note: Cubic is not supported for the XRSite object that we use
+        self.convergence_tolerance = 1e-5 - fidelity*9.9e-6 # Tolerance set linearly from 1e-5 to 1e-7
         self.wake_dist_model = None
-        self.rotor_avg_model = None
-        self.wake_deficit_model = BastankhahGaussianDeficit(use_effective_ws=True,rotorAvgModel=self.rotor_avg_model)
-        self.superposition_model = SafeSquaredSum()
-        self.blockage_deficit_model = VortexCylinder(superpositionModel= self.superposition_model, rotorAvgModel=self.rotor_avg_model, use_effective_ws=True)
-        self.deflection_model = None
-        self.turbulence_model = CrespoHernandez(rotorAvgModel=self.rotor_avg_model)
-        self.convergence_tolerance = 1e-6

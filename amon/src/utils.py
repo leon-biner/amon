@@ -24,7 +24,8 @@ INSTANCES_PARAM_FILEPATHS = [ AMON_HOME / 'instances' / '1' / 'params.txt',
                               AMON_HOME / 'instances' / '2' / 'params.txt',
                               AMON_HOME / 'instances' / '3' / 'params.txt',
                               AMON_HOME / 'instances' / '4' / 'params.txt',
-                              AMON_HOME / 'instances' / '5' / 'params.txt' ]
+                              AMON_HOME / 'instances' / '5' / 'params.txt',
+                              AMON_HOME / 'instances' / '6' / 'params.txt' ]
 
 # Names of available wind turbines in order
 AVAILABLE_TURBINES_NAMES = ['V80', 'OpenWind', 'IEA_22MW', 'V82', 'Bespoke_6MW', 'IEA_3.4MW']
@@ -146,18 +147,21 @@ def getInstanceInfo(instance):
 # This function validates the output against hardcoded values
 def check():
     import subprocess
-    targets = { 1 : ['-42.2572597633', '0.0000000000', '0.0000000000', '0.0000000000'],
-                2 : ['19623.9642234370', '0.0000000000', '0.0000000000', '0.0000000000'],
-                3 : ['1.0450466129', '0.0000000000', '0.0000000000', '0.0000000000'],
-                4 : ['1.7567544267', '0.0000000000', '0.0000000000', '0.0000000000', '-99979760.0000000000'],
-                5 : ['35958.4901323267', '0.0000000000', '0.0000000000', '0.0000000000'] }
+    targets = { 1 : ['-44.7175597427', '0.0000000000', '0.0000000000', '0.0000000000'],
+                2 : ['19556.5205944264', '0.0000000000', '0.0000000000', '0.0000000000'],
+                3 : ['1.0184866727', '0.0000000000', '0.0000000000', '0.0000000000'],
+                4 : ['1.7034878319', '0.0000000000', '0.0000000000', '0.0000000000', '-99979760.0000000000'],
+                5 : ['35881.8482553185', '0.0000000000', '0.0000000000', '0.0000000000'] }
     results = {}
     for i in range(5):
         instance = i+1
         results[instance] = subprocess.run(['amon', 'run', f'{instance}', f'AMON_HOME/starting_pts/x{instance}.txt', '-s', '1'], capture_output=True, text=True).stdout.split()
     for instance, target_result in targets.items():
         if target_result != results[instance]:
-            print(target_result)
-            print(results[instance])
             return "\033[91mCHECK INVALID\033[0m: Unexpected results, please contact some_adress@provider.extension"
     return "\033[92mCHECK VALID\033[0m"
+
+def penalizeObj(OBJ, constraints): # constraints is a dict with each field corresponding to a constraint
+    OBJ += abs(OBJ) * 0.05 * constraints['placing'] # both constraints are always 0 or positive
+    OBJ += abs(OBJ) * 0.1 * constraints['spacing']
+    return OBJ

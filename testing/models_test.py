@@ -77,7 +77,8 @@ def main():
     with open("sorted_time.txt", "w") as f:
         for diff in sorted_time:
             f.write(f"AEP: {diff['aep']:.6f}, Indices: {diff['indices']}, Time: {diff['time']:.2f} s\n")
-main()
+# main()
+st = time.time()
 print('-----------------------')
 wfm = All2AllIterative( site                  = IEA37Site(64),
                         windTurbines          = IEA37WindTurbines(),
@@ -91,3 +92,4 @@ wfm = All2AllIterative( site                  = IEA37Site(64),
 x, y, aep_ref = read_iea37_windfarm(iea37_path + 'iea37-ex%d.yaml' % 64)
 aep_sim = wfm(x, y, tilt=0, yaw=0).aep().sum().item()
 print(aep_sim)
+print(time.time()-st)

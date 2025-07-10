@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "amon"
+version = "0.0"
+description = "Wind farm blackbox CLI app"
+authors = [{ name = "Léon Biner", email = "leon.biner@polymtl.ca" }]
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.7"
+dependencies = [ 
+  "py_wake>2.6.11", 
+  "numpy",
+  "matplotlib",
+  "shapely",
+  "pathlib",     # Optional — part of stdlib in 3.4+, can be removed
+  "requests",
+  "scipy",
+  "pandas",
+  "geopandas",
+  "windrose",
+  "pyshp",       # use this instead of "shapefile"
+  "flask",
+  "xarray"
+]
+
+
+[project.scripts]
+amon = "amon.src.main:main"
+
+[tool.setuptools.packages.find]
+include = ["amon*"]
+
+[tool.setuptools.package-data]
+amon = ["data/**/*", "instances/**/*", "starting_pts/**/*"]

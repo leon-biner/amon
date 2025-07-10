@@ -31,15 +31,13 @@ def _runBB(args):
     if args.r:
         from amon.src.client import runBBRequest
         result = [float(res) for res in runBBRequest(args).split()]
-        print(f'{result[0]:.10f}', end=' ')
-        for res in result[1:]:
+        for res in result:
             print(f'{res:.10f}', end=' ') 
         print()
     else:
         from amon.src.blackbox import runBB
         result = [float(res) for res in runBB(args).split()]
-        print(f'{result[0]:.10f}', end=' ')
-        for res in result[1:]:
+        for res in result:
             print(f'{res:.10f}', end=' ') 
         print()
 

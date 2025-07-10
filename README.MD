@@ -115,7 +115,8 @@ x_1 y_1 x_2 y_2 x_3 y_3 x_4 y_4 h_1 h_2 h_3 h_4 t_1 t_2 t_3 t_4
 
 ```
 -s SEED     : Set the random seed (random by default if not specified)
--r          : Send request to the local server instead of running directly (see the `serve` command)
+-r          : Send request to the local server instead of running directly (see the serve command)
+-f FIDELITY : Set the fidelity (between 0 and 1)
 --port PORT : Specify the port for the local server
 --debug     : Show full error tracebacks for debugging
 ```
@@ -130,7 +131,7 @@ The output is set by the BLACKBOX_OUTPUT field of the parameter file. It can be 
 ### Command example
 
 ```bash
-amon run 1 AMON_HOME/starting_pts/x1.txt -s 3 --port 1234 -r
+amon run 1 AMON_HOME/starting_pts/x1.txt -s 3 -f 0.5
 ```
 
 ## `show-windrose`
@@ -247,6 +248,12 @@ amon run -r ...
 
 ```bash
 amon serve --port 1234
+```
+
+Then with run:
+
+```bash
+amon run 1 AMON_HOME/starting_pts/x1.txt -r --port 1234
 ```
 
 ## `shutdown`

@@ -8,7 +8,8 @@ def runBBRequest(args):
             json={
                 "instance_or_param_file" : args.instance_or_param_file,
                 "point"                  : args.point,
-                "s"                      : args.s
+                "s"                      : args.s,
+                "f"                      : args.f
             }
         )
     except requests.exceptions.ConnectionError:

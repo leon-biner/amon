@@ -49,6 +49,8 @@ def showZone(args):
 
     boundary_zone_path  = zone_path / 'boundary_zone.shp'
     exclusion_zone_path = zone_path / 'exclusion_zone.shp'
+    if args.point is None:
+        args.point = None, None
     point_filepath = getPath(args.point[0])
     save_filepath  = getPath(args.save)
 

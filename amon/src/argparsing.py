@@ -13,6 +13,7 @@ def create_parser(run_f, windrose_f, show_zone_f, show_turbine_f, show_elevation
     parser_run.add_argument("point", metavar="POINT", help=f"\033[94mPath from current directory to file containing point to evaluate.\033[0m")
     parser_run.add_argument("-r", action='store_true', help="Send requests to the server instead of directly running")
     parser_run.add_argument("-s", type=int, metavar='SEED', help='Set the seed')
+    parser_run.add_argument("-f", type=int, metavar='FIDELITY', default=1, help='Set fidelity (between 0 and 1)')
     parser_run.add_argument("--port", metavar="PORT", help="Port number")
     parser_run.add_argument("--debug", action='store_true', help='Show full error messages')
     parser_run.set_defaults(func=run_f)
