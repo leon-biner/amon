@@ -1,6 +1,7 @@
 *.egg-info
-__pycache__/
-.DS_store/
-build/
+__pycache__
+.DS_store
+notes.txt
+build
 **/s.py
 **/s2.py
