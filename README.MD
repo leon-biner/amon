@@ -6,6 +6,12 @@ The installation is via GitHub (for now):
 pip install git+ssh://git@github.com/leon-biner/amon.git
 ```
 
+If your ssh keys are not set up, you can install via https:
+
+```bash
+pip install git+https://git@github.com/leon-biner/amon.git
+```
+
 > Note: This is a private repository.
 
 Eventually, the package will be published on PyPI, and installation will simply be:
