@@ -1,6 +1,6 @@
 *.egg-info
 __pycache__
-.DS_store
+**/.DS_store
 notes.txt
 build
 **/s.py

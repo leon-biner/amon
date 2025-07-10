@@ -1,0 +1,10 @@
+DIMENSION 60
+
+BB_EXE "$ $amon $run $1 $-r $--port $1234"
+BB_OUTPUT_TYPE OBJ PB PB
+
+BB_INPUT_TYPE * R
+X0 x1.txt
+
+MAX_BB_EVAL 1000
+DISPLAY_ALL_EVAL yes
