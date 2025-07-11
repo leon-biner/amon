@@ -16,7 +16,7 @@ The application is installed in `$HOME/.local/bin`. This directory needs to be i
 echo $PATH | tr ':' '\n' | grep "$HOME/.local/bin"
 ```
 
-If you see an output looking like `/home/username/.local/bin`, it is already in your path, you can move on to the **Verification** step. If not, follow the steps below.
+If you see an output looking like `/home/username/.local/bin`, it is already in your path; you can move on to the **Verification** step. If not, follow the steps below.
 
 ### Adding to $PATH globally
 
