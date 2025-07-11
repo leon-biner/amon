@@ -1,6 +1,8 @@
+# amon v0.2
+
 # Installation
 
-To install the application:
+To install:
 
 ```bash
 pip install amon-bb
