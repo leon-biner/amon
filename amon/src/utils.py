@@ -115,7 +115,6 @@ def simple_excepthook(exctype, value, tb):
     print(value)
     sys.exit(1)
 
-
 def getFunctionFromFile(filepath):
     with open(filepath, 'r') as file:
         file_content = file.read()

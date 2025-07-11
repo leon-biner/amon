@@ -3,8 +3,8 @@ requires = ["setuptools>61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "amon"
-version = "0.0"
+name = "amon_bb"
+version = "0.2"
 description = "Wind farm blackbox CLI app"
 authors = [{ name = "Léon Biner", email = "leon.biner@polymtl.ca" }]
 readme = "README.md"
